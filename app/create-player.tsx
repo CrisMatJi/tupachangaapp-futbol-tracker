@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -36,6 +37,10 @@ export default function CreatePlayerScreen() {
       Alert.alert('Error', 'El nombre del jugador es obligatorio.')
       return
     }
+    if (!position) {
+      Alert.alert('Error', 'Debes seleccionar una posición para el jugador.')
+      return
+    }
     if (!user) return
 
     setLoading(true)
@@ -47,7 +52,7 @@ export default function CreatePlayerScreen() {
         skill,
         position: position || undefined,
         createdAt: new Date().toISOString(),
-      })
+      } as any)
       Alert.alert('¡Listo!', `${name.trim()} ha sido añadido al equipo. 🎉`, [
         { text: 'Crear otro', onPress: () => { setName(''); setSkill(3); setPosition(null) } },
         { text: 'Ir al menú', onPress: () => router.replace('/home') },
@@ -60,7 +65,12 @@ export default function CreatePlayerScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <ImageBackground
+      source={require('@/assets/images/background-jugadores.jpeg')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>
@@ -95,7 +105,7 @@ export default function CreatePlayerScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Ej: Messi, Ronaldo..."
-                placeholderTextColor="#4B5563"
+                placeholderTextColor="#9CA3AF"
                 value={name}
                 onChangeText={setName}
                 maxLength={40}
@@ -130,13 +140,13 @@ export default function CreatePlayerScreen() {
             </Text>
 
             {/* Position */}
-            <Text style={styles.label}>Posición <Text style={styles.optional}>(opcional)</Text></Text>
+            <Text style={styles.label}>Posición <Text style={styles.required}>*</Text></Text>
             <View style={styles.posGrid}>
               {POSITIONS.map((pos) => (
                 <TouchableOpacity
                   key={pos.key}
                   style={[styles.posBtn, position === pos.key && styles.posBtnActive]}
-                  onPress={() => setPosition(position === pos.key ? null : pos.key)}
+                  onPress={() => setPosition(pos.key)}
                   activeOpacity={0.8}
                 >
                   <Text style={styles.posEmoji}>{pos.emoji}</Text>
@@ -163,12 +173,16 @@ export default function CreatePlayerScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </ImageBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A3A17' },
+  root: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,58,23,0.80)',
+  },
   safe: { flex: 1 },
   flex: { flex: 1 },
   header: {
@@ -202,9 +216,9 @@ const styles = StyleSheet.create({
     borderColor: '#22C55E',
   },
   avatarEmoji: { fontSize: 36 },
-  avatarHint: { fontSize: 13, color: '#4B5563', marginTop: 8 },
-  label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.7)', marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' },
-  optional: { fontWeight: '400', color: '#4B5563' },
+  avatarHint: { fontSize: 13, color: '#D1D5DB', marginTop: 8 },
+  label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)', marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' },
+  required: { fontWeight: '700', color: '#EF4444' },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -228,11 +242,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.07)',
   },
   skillBtnActive: { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.12)' },
-  skillStar: { fontSize: 22, color: '#374151' },
+  skillStar: { fontSize: 22, color: '#D1D5DB' },
   skillStarActive: { color: '#F59E0B' },
-  skillLabel: { fontSize: 11, fontWeight: '700', color: '#374151', marginTop: 2 },
+  skillLabel: { fontSize: 11, fontWeight: '700', color: '#D1D5DB', marginTop: 2 },
   skillLabelActive: { color: '#F59E0B' },
-  skillDesc: { fontSize: 13, color: '#6B7280', marginBottom: 20, textAlign: 'center' },
+  skillDesc: { fontSize: 13, color: '#D1D5DB', marginBottom: 20, textAlign: 'center' },
   posGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
   posBtn: {
     flex: 1,
@@ -246,9 +260,9 @@ const styles = StyleSheet.create({
   },
   posBtnActive: { borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,0.12)' },
   posEmoji: { fontSize: 24, marginBottom: 4 },
-  posKey: { fontSize: 16, fontWeight: '900', color: '#6B7280' },
+  posKey: { fontSize: 16, fontWeight: '900', color: '#D1D5DB' },
   posKeyActive: { color: '#22C55E' },
-  posLabel: { fontSize: 11, color: '#4B5563', marginTop: 2 },
+  posLabel: { fontSize: 11, color: '#D1D5DB', marginTop: 2 },
   saveBtn: {
     backgroundColor: '#22C55E',
     borderRadius: 14,

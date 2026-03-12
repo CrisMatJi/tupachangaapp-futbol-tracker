@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -83,10 +84,15 @@ export default function MatchesListScreen() {
           <Text style={styles.matchSub}>
             Partido #{matches.length - index}
           </Text>
-          <View style={styles.statusBadge}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusText}>{item.status === 'created' ? 'Creado' : item.status}</Text>
+          <View style={[styles.statusBadge, item.status === 'finished' && styles.statusBadgeFinished]}>
+            <View style={[styles.statusDot, item.status === 'finished' && styles.statusDotFinished]} />
+            <Text style={[styles.statusText, item.status === 'finished' && styles.statusTextFinished]}>
+              {item.status === 'finished' ? '✅ Finalizado' : 'Creado'}
+            </Text>
           </View>
+          {item.status === 'finished' && item.scoreA !== undefined && item.scoreB !== undefined && (
+            <Text style={styles.scoreText}>{item.scoreA} — {item.scoreB}</Text>
+          )}
         </View>
       </View>
       <View style={styles.matchRight}>
@@ -107,7 +113,12 @@ export default function MatchesListScreen() {
   )
 
   return (
-    <View style={styles.root}>
+    <ImageBackground
+      source={require('@/assets/images/background-partidos.jpg')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -146,12 +157,16 @@ export default function MatchesListScreen() {
           }
         />
       </SafeAreaView>
-    </View>
+    </ImageBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A3A17' },
+  root: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,58,23,0.80)',
+  },
   safe: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -172,9 +187,9 @@ const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 40 },
   matchCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#111827', borderRadius: 14,
+    backgroundColor: '#0D1F0D', borderRadius: 14,
     marginBottom: 10, padding: 14,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1, borderColor: 'rgba(74,222,128,0.1)',
   },
   matchLeft: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   matchEmoji: {
@@ -184,8 +199,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   matchEmojiText: { fontSize: 26 },
-  matchType: { fontSize: 14, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 },
-  matchSub: { fontSize: 12, color: '#6B7280', marginBottom: 4 },
+  matchType: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 },
+  matchSub: { fontSize: 12, color: '#D1D5DB', marginBottom: 4 },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(34,197,94,0.1)',
@@ -194,6 +209,10 @@ const styles = StyleSheet.create({
   },
   statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' },
   statusText: { fontSize: 10, fontWeight: '700', color: '#22C55E' },
+  statusBadgeFinished: { backgroundColor: 'rgba(59,130,246,0.12)' },
+  statusDotFinished: { backgroundColor: '#60A5FA' },
+  statusTextFinished: { color: '#93C5FD' },
+  scoreText: { fontSize: 13, fontWeight: '800', color: '#4ADE80', marginTop: 3 },
   matchRight: { flexDirection: 'row', gap: 8 },
   editBtn: {
     width: 36, height: 36, borderRadius: 10,
@@ -207,7 +226,7 @@ const styles = StyleSheet.create({
   },
   empty: { alignItems: 'center', paddingTop: 80 },
   emptyEmoji: { fontSize: 56, marginBottom: 12 },
-  emptyText: { color: '#6B7280', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  emptyText: { color: '#D1D5DB', fontSize: 15, textAlign: 'center', lineHeight: 22 },
   emptyBtn: {
     marginTop: 16, backgroundColor: '#22C55E',
     borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,

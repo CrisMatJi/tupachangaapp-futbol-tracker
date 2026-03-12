@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -54,7 +55,12 @@ export default function AuthScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <ImageBackground
+      source={require('@/assets/images/background-login.jpeg')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
       <FieldLines />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -102,7 +108,7 @@ export default function AuthScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Correo electrónico"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor="#9CA3AF"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -116,13 +122,13 @@ export default function AuthScreen() {
               <TextInput
                 style={[styles.input, styles.inputFlex]}
                 placeholder="Contraseña"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor="#9CA3AF"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color="#6B7280" />
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color="#C4C4C4" />
               </TouchableOpacity>
             </View>
 
@@ -132,7 +138,7 @@ export default function AuthScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Confirmar contraseña"
-                  placeholderTextColor="#6B7280"
+                  placeholderTextColor="#9CA3AF"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showPassword}
@@ -154,12 +160,16 @@ export default function AuthScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </ImageBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F4C1E' },
+  root: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
   flex: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   header: { alignItems: 'center', marginBottom: 32 },
@@ -188,7 +198,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255,255,255,0.85)',
     marginTop: 6,
     letterSpacing: 0.5,
   },
@@ -213,7 +223,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toggleActive: { backgroundColor: '#16A34A' },
-  toggleText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
+  toggleText: { fontSize: 14, fontWeight: '600', color: '#D1D5DB' },
   toggleTextActive: { color: '#FFFFFF' },
   field: {
     flexDirection: 'row',

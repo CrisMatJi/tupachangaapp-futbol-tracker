@@ -16,7 +16,10 @@ export interface Match {
   userId: string
   date: string
   matchType: MatchType
-  status: string
+  status: string  // 'created' | 'finished'
+  scoreA?: number
+  scoreB?: number
+  mvpPlayerId?: string
   createdAt: string
 }
 
@@ -24,6 +27,7 @@ export interface MatchPlayer {
   id: string
   matchId: string
   playerId: string
+  userId: string
   team?: Team
   createdAt: string
   // joined

@@ -7,6 +7,8 @@ import {
   ScrollView,
   Alert,
   Modal,
+  Share,
+  Linking,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -24,14 +26,38 @@ const POSITIONS_INFO: Record<string, { emoji: string; color: string }> = {
   AT: { emoji: '⚡', color: '#EF4444' },
 }
 
+function posImbalance(teamA: Player[], teamB: Player[]): number {
+  return ['POR', 'DEF', 'MD', 'AT'].reduce((score, pos) => {
+    const cA = teamA.filter(p => p.position === pos).length
+    const cB = teamB.filter(p => p.position === pos).length
+    return score + Math.abs(cA - cB)
+  }, 0)
+}
+
 function balanceTeams(players: Player[]): { teamA: Player[]; teamB: Player[] } {
   const sorted = [...players].sort((a, b) => b.skill - a.skill)
-  const teamA: Player[] = []
-  const teamB: Player[] = []
+  let teamA: Player[] = []
+  let teamB: Player[] = []
   let sumA = 0, sumB = 0
   for (const p of sorted) {
     if (sumA <= sumB) { teamA.push(p); sumA += p.skill }
     else { teamB.push(p); sumB += p.skill }
+  }
+  // Intercambios de igual skill para mejorar balance de posiciones
+  let improved = true
+  while (improved) {
+    improved = false
+    const curScore = posImbalance(teamA, teamB)
+    for (let i = 0; i < teamA.length && !improved; i++) {
+      for (let j = 0; j < teamB.length && !improved; j++) {
+        if (teamA[i].skill !== teamB[j].skill) continue
+        const newA = [...teamA]; newA[i] = teamB[j]
+        const newB = [...teamB]; newB[j] = teamA[i]
+        if (posImbalance(newA, newB) < curScore) {
+          teamA = newA; teamB = newB; improved = true
+        }
+      }
+    }
   }
   return { teamA, teamB }
 }
@@ -57,6 +83,9 @@ export default function MatchDetailScreen() {
   const [localTeamA, setLocalTeamA] = useState<Player[]>([])
   const [localTeamB, setLocalTeamB] = useState<Player[]>([])
   const [saving, setSaving] = useState(false)
+  const [scoreA, setScoreA] = useState(0)
+  const [scoreB, setScoreB] = useState(0)
+  const [mvpPlayerId, setMvpPlayerId] = useState<string | null>(null)
 
   // Fetch match
   const { data: match } = useQuery({
@@ -109,6 +138,48 @@ export default function MatchDetailScreen() {
     if (teamBPlayers.length) setLocalTeamB(teamBPlayers)
   }, [matchPlayersRaw.length])
 
+  // Cargar resultado y MVP si el partido ya está finalizado
+  useEffect(() => {
+    if (match) {
+      if (match.scoreA !== undefined) setScoreA(match.scoreA)
+      if (match.scoreB !== undefined) setScoreB(match.scoreB)
+      if (match.mvpPlayerId) setMvpPlayerId(match.mvpPlayerId)
+    }
+  }, [match?.id])
+
+  const handleFinishMatch = async () => {
+    if (!matchId || !user) return
+    Alert.alert(
+      'Finalizar partido',
+      `¿Confirmas el resultado ${scoreA} - ${scoreB}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Finalizar',
+          onPress: async () => {
+            setSaving(true)
+            try {
+              await blink.db.matches.update(matchId, {
+                status: 'finished',
+                scoreA,
+                scoreB,
+                mvpPlayerId: mvpPlayerId || undefined,
+              } as any)
+              queryClient.invalidateQueries({ queryKey: ['match', matchId] })
+              queryClient.invalidateQueries({ queryKey: ['matches'] })
+              Alert.alert('¡Partido finalizado!', '🏆 El resultado ha sido guardado.')
+            } catch (err: any) {
+              console.error('[match-detail] Error finalizando partido:', JSON.stringify(err, null, 2))
+              Alert.alert('Error', err?.message || 'No se pudo finalizar el partido.\nRevisa que la tabla \'matches\' tiene los campos: status, score_a, score_b, mvp_player_id.')
+            } finally {
+              setSaving(false)
+            }
+          },
+        },
+      ]
+    )
+  }
+
   const openPlayerPicker = () => {
     setTempSelectedIds(currentPlayerIds)
     setShowPlayerPicker(true)
@@ -141,6 +212,33 @@ export default function MatchDetailScreen() {
     setLocalTeamB(teamB)
   }
 
+  const formatLineup = (): string => {
+    const stars = (n: number) => '⭐'.repeat(n)
+    const teamAText = localTeamA
+      .map(p => `  ${POSITIONS_INFO[p.position || '']?.emoji ?? '⚽'} ${p.name}  ${stars(p.skill)}`)
+      .join('\n')
+    const teamBText = localTeamB
+      .map(p => `  ${POSITIONS_INFO[p.position || '']?.emoji ?? '⚽'} ${p.name}  ${stars(p.skill)}`)
+      .join('\n')
+    const dateStr = match ? formatDate(match.date) : ''
+    const type = match?.matchType?.toUpperCase() ?? ''
+    return `⚽ *tuPachanga — Alineación*\n📅 ${dateStr}  ·  ${type}\n\n🔴 *EQUIPO A* (Media ${avgSkill(localTeamA)}★)\n${teamAText}\n\n🔵 *EQUIPO B* (Media ${avgSkill(localTeamB)}★)\n${teamBText}\n\n🏆 Organizado con tuPachanga`
+  }
+
+  const handleShareLineup = async () => {
+    try { await Share.share({ message: formatLineup() }) } catch {}
+  }
+
+  const handleShareWhatsApp = async () => {
+    const text = formatLineup()
+    const url = `whatsapp://send?text=${encodeURIComponent(text)}`
+    if (await Linking.canOpenURL(url)) {
+      await Linking.openURL(url)
+    } else {
+      await Share.share({ message: text })
+    }
+  }
+
   const handleSaveChanges = async () => {
     if (!matchId || !user) return
     setSaving(true)
@@ -150,21 +248,23 @@ export default function MatchDetailScreen() {
         await blink.db.matchPlayers.delete(mp.id)
       }
       // Create new ones
-      for (const p of localTeamA) {
+      for (let i = 0; i < localTeamA.length; i++) {
         await blink.db.matchPlayers.create({
-          id: `mp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          id: `mp_${matchId}_A_${i}`,
           matchId: matchId!,
-          playerId: p.id,
+          playerId: localTeamA[i].id,
           team: 'A',
+          userId: user.id,
           createdAt: new Date().toISOString(),
         })
       }
-      for (const p of localTeamB) {
+      for (let i = 0; i < localTeamB.length; i++) {
         await blink.db.matchPlayers.create({
-          id: `mp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          id: `mp_${matchId}_B_${i}`,
           matchId: matchId!,
-          playerId: p.id,
+          playerId: localTeamB[i].id,
           team: 'B',
+          userId: user.id,
           createdAt: new Date().toISOString(),
         })
       }
@@ -172,7 +272,8 @@ export default function MatchDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['matches'] })
       Alert.alert('¡Guardado!', 'El partido ha sido actualizado. 🎉')
     } catch (err: any) {
-      Alert.alert('Error', err?.message)
+      console.error('[match-detail] Error guardando cambios:', JSON.stringify(err, null, 2))
+      Alert.alert('Error', err?.message || 'No se pudo guardar los cambios.')
     } finally {
       setSaving(false)
     }
@@ -181,7 +282,7 @@ export default function MatchDetailScreen() {
   if (!match) {
     return (
       <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#6B7280' }}>Cargando...</Text>
+        <Text style={{ color: '#D1D5DB' }}>Cargando...</Text>
       </View>
     )
   }
@@ -197,8 +298,8 @@ export default function MatchDetailScreen() {
             <Text style={styles.headerTitle}>{match.matchType.toUpperCase()}</Text>
             <Text style={styles.headerSub}>{formatDate(match.date)}</Text>
           </View>
-          <TouchableOpacity style={styles.redoBtn} onPress={handleRedoTeams}>
-            <Ionicons name="shuffle-outline" size={20} color="#4ADE80" />
+          <TouchableOpacity style={styles.redoBtn} onPress={handleShareLineup} activeOpacity={0.85}>
+            <Ionicons name="share-social-outline" size={22} color="#4ADE80" />
           </TouchableOpacity>
         </View>
 
@@ -278,6 +379,97 @@ export default function MatchDetailScreen() {
               {saving ? 'Guardando...' : '💾 Guardar cambios'}
             </Text>
           </TouchableOpacity>
+
+          {/* ── Resultado y MVP ── */}
+          {match.status === 'finished' ? (
+            <View style={styles.resultBanner}>
+              <Text style={styles.resultTitle}>🏆 Resultado final</Text>
+              <View style={styles.resultScoreRow}>
+                <Text style={styles.resultTeamLabel}>🔴 A</Text>
+                <Text style={styles.resultScoreNum}>{match.scoreA ?? '–'}</Text>
+                <Text style={styles.resultColon}>:</Text>
+                <Text style={styles.resultScoreNum}>{match.scoreB ?? '–'}</Text>
+                <Text style={[styles.resultTeamLabel, { color: '#3B82F6' }]}>🔵 B</Text>
+              </View>
+              {match.mvpPlayerId && (
+                <View style={styles.mvpResultRow}>
+                  <Text style={styles.mvpResultLabel}>⭐ MVP</Text>
+                  <Text style={styles.mvpResultName}>
+                    {allPlayers.find(p => p.id === match.mvpPlayerId)?.name || '–'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View style={styles.finishSection}>
+              <Text style={styles.finishSectionTitle}>🏁 Finalizar partido</Text>
+
+              {/* Marcador */}
+              <Text style={styles.finishLabel}>RESULTADO</Text>
+              <View style={styles.scoreRow}>
+                <View style={styles.scoreBox}>
+                  <Text style={styles.scoreTeamLabel}>🔴 Equipo A</Text>
+                  <View style={styles.scoreControls}>
+                    <TouchableOpacity onPress={() => setScoreA(Math.max(0, scoreA - 1))} style={styles.scoreBtn}>
+                      <Text style={styles.scoreBtnText}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.scoreValue}>{scoreA}</Text>
+                    <TouchableOpacity onPress={() => setScoreA(scoreA + 1)} style={styles.scoreBtn}>
+                      <Text style={styles.scoreBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={styles.scoreSeparator}>
+                  <Text style={styles.scoreSeparatorText}>:</Text>
+                </View>
+                <View style={styles.scoreBox}>
+                  <Text style={[styles.scoreTeamLabel, { color: '#3B82F6' }]}>🔵 Equipo B</Text>
+                  <View style={styles.scoreControls}>
+                    <TouchableOpacity onPress={() => setScoreB(Math.max(0, scoreB - 1))} style={styles.scoreBtn}>
+                      <Text style={styles.scoreBtnText}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.scoreValue}>{scoreB}</Text>
+                    <TouchableOpacity onPress={() => setScoreB(scoreB + 1)} style={styles.scoreBtn}>
+                      <Text style={styles.scoreBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              {/* MVP */}
+              <Text style={styles.finishLabel}>MVP DEL PARTIDO ⭐</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mvpScroll} contentContainerStyle={{ paddingRight: 16 }}>
+                {[...localTeamA, ...localTeamB].map((p) => {
+                  const isSelected = mvpPlayerId === p.id
+                  const pos = p.position ? POSITIONS_INFO[p.position] : null
+                  return (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[styles.mvpCard, isSelected && styles.mvpCardActive]}
+                      onPress={() => setMvpPlayerId(isSelected ? null : p.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.mvpEmoji}>{pos ? pos.emoji : '⚽'}</Text>
+                      <Text style={[styles.mvpName, isSelected && styles.mvpNameActive]} numberOfLines={1}>
+                        {p.name}
+                      </Text>
+                      {isSelected && <Text style={styles.mvpStar}>⭐</Text>}
+                    </TouchableOpacity>
+                  )
+                })}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={[styles.finishBtn, saving && styles.saveBtnDisabled]}
+                onPress={handleFinishMatch}
+                disabled={saving}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="trophy-outline" size={20} color="#0A3A17" />
+                <Text style={styles.finishBtnText}>{saving ? 'Guardando...' : '✅ Finalizar partido'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
 
         {/* Player Picker Modal */}
@@ -287,7 +479,7 @@ export default function MatchDetailScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>👥 Cambiar jugadores</Text>
                 <TouchableOpacity onPress={() => setShowPlayerPicker(false)}>
-                  <Ionicons name="close" size={24} color="#6B7280" />
+                  <Ionicons name="close" size={24} color="#C4C4C4" />
                 </TouchableOpacity>
               </View>
               <Text style={styles.modalSub}>
@@ -356,11 +548,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' },
-  headerSub: { fontSize: 12, color: '#6B7280', textAlign: 'center' },
+  headerSub: { fontSize: 13, color: '#D1D5DB', textAlign: 'center' },
   scroll: { padding: 16, paddingBottom: 40 },
   teamCard: {
-    backgroundColor: '#111827', borderRadius: 16, marginBottom: 6,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden',
+    backgroundColor: '#0D1F0D', borderRadius: 16, marginBottom: 6,
+    borderWidth: 1, borderColor: 'rgba(74,222,128,0.12)', overflow: 'hidden',
   },
   teamCardA: { borderTopWidth: 3, borderTopColor: '#EF4444' },
   teamCardB: { borderTopWidth: 3, borderTopColor: '#3B82F6' },
@@ -375,7 +567,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)',
   },
-  playerName: { flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: '500' },
+  playerName: { flex: 1, fontSize: 15, color: '#F3F4F6', fontWeight: '600' },
   vsDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 8 },
   vsLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   vsCircle: {
@@ -415,7 +607,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  modalSub: { fontSize: 13, color: '#6B7280', marginBottom: 14 },
+  modalSub: { fontSize: 13, color: '#D1D5DB', marginBottom: 14 },
   modalScroll: { maxHeight: 320 },
   modalPlayerRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -436,4 +628,73 @@ const styles = StyleSheet.create({
   },
   applyBtnDisabled: { opacity: 0.4 },
   applyBtnText: { fontSize: 15, fontWeight: '800', color: '#0A3A17' },
+  // Result banner (partido finalizado)
+  resultBanner: {
+    marginTop: 16, backgroundColor: '#1A2F1A',
+    borderRadius: 16, padding: 20,
+    borderWidth: 1.5, borderColor: '#22C55E',
+    alignItems: 'center',
+  },
+  resultTitle: { fontSize: 16, fontWeight: '800', color: '#22C55E', marginBottom: 14 },
+  resultScoreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  resultTeamLabel: { fontSize: 14, fontWeight: '700', color: '#EF4444' },
+  resultScoreNum: { fontSize: 40, fontWeight: '900', color: '#FFFFFF' },
+  resultColon: { fontSize: 34, fontWeight: '900', color: '#4ADE80' },
+  mvpResultRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  mvpResultLabel: { fontSize: 13, color: '#F59E0B', fontWeight: '700' },
+  mvpResultName: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+  // Finish section
+  finishSection: {
+    marginTop: 16, backgroundColor: '#111827',
+    borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: 'rgba(74,222,128,0.2)',
+  },
+  finishSectionTitle: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', marginBottom: 14 },
+  finishLabel: {
+    fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 0.8, marginBottom: 10, textTransform: 'uppercase',
+  },
+  scoreRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  scoreBox: { flex: 1, alignItems: 'center' },
+  scoreTeamLabel: { fontSize: 12, fontWeight: '700', color: '#EF4444', marginBottom: 8 },
+  scoreControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  scoreBtn: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: 'rgba(74,222,128,0.12)',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)',
+  },
+  scoreBtnText: { fontSize: 22, fontWeight: '700', color: '#4ADE80', lineHeight: 26 },
+  scoreValue: { fontSize: 36, fontWeight: '900', color: '#FFFFFF', minWidth: 40, textAlign: 'center' },
+  scoreSeparator: { paddingHorizontal: 8, alignItems: 'center' },
+  scoreSeparatorText: { fontSize: 30, fontWeight: '900', color: '#4ADE80' },
+  mvpScroll: { marginBottom: 16 },
+  mvpCard: {
+    width: 80, marginRight: 10,
+    backgroundColor: '#1A1A2E', borderRadius: 12, padding: 10,
+    alignItems: 'center',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)',
+  },
+  mvpCardActive: { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.15)' },
+  mvpEmoji: { fontSize: 22, marginBottom: 4 },
+  mvpName: { fontSize: 11, fontWeight: '600', color: '#D1D5DB', textAlign: 'center' },
+  mvpNameActive: { color: '#F59E0B' },
+  mvpStar: { fontSize: 14, marginTop: 2 },
+  finishBtn: {
+    backgroundColor: '#22C55E', borderRadius: 14, height: 52,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
+  finishBtnText: { fontSize: 15, fontWeight: '800', color: '#0A3A17' },
+  shareRow: { flexDirection: 'row', gap: 10, marginHorizontal: 20, marginBottom: 10 },
+  shareWhatsAppBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#25D366', borderRadius: 14, height: 50,
+  },
+  shareWhatsAppText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
+  shareOtherBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: 'rgba(74,222,128,0.1)', borderRadius: 14, height: 50,
+    borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)',
+  },
+  shareOtherText: { fontSize: 14, fontWeight: '700', color: '#4ADE80' },
 })

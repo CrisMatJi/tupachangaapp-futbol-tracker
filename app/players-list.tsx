@@ -10,6 +10,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -91,6 +92,10 @@ export default function PlayersListScreen() {
 
   const handleUpdate = () => {
     if (!editName.trim() || !editPlayer) return
+    if (!editPosition) {
+      Alert.alert('Error', 'Debes seleccionar una posición.')
+      return
+    }
     updateMutation.mutate({
       id: editPlayer.id,
       name: editName.trim(),
@@ -147,7 +152,12 @@ export default function PlayersListScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <ImageBackground
+      source={require('@/assets/images/background-jugadores.jpeg')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>
@@ -165,11 +175,11 @@ export default function PlayersListScreen() {
 
         {/* Search */}
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={16} color="#4B5563" style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar jugador..."
-            placeholderTextColor="#4B5563"
+            placeholderTextColor="#9CA3AF"
             value={search}
             onChangeText={setSearch}
           />
@@ -211,7 +221,7 @@ export default function PlayersListScreen() {
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>✏️ Editar Jugador</Text>
                   <TouchableOpacity onPress={() => setEditPlayer(null)}>
-                    <Ionicons name="close" size={24} color="#6B7280" />
+                    <Ionicons name="close" size={24} color="#C4C4C4" />
                   </TouchableOpacity>
                 </View>
 
@@ -222,7 +232,7 @@ export default function PlayersListScreen() {
                     value={editName}
                     onChangeText={setEditName}
                     placeholder="Nombre"
-                    placeholderTextColor="#4B5563"
+                    placeholderTextColor="#9CA3AF"
                   />
                 </View>
 
@@ -246,7 +256,7 @@ export default function PlayersListScreen() {
                     <TouchableOpacity
                       key={pos.key}
                       style={[styles.posChip, editPosition === pos.key && { borderColor: pos.color, backgroundColor: `${pos.color}22` }]}
-                      onPress={() => setEditPosition(editPosition === pos.key ? null : pos.key)}
+                      onPress={() => setEditPosition(pos.key)}
                     >
                       <Text style={{ fontSize: 14 }}>{pos.emoji}</Text>
                       <Text style={[styles.posChipText, editPosition === pos.key && { color: pos.color }]}>{pos.key}</Text>
@@ -268,12 +278,16 @@ export default function PlayersListScreen() {
           </View>
         </Modal>
       </SafeAreaView>
-    </View>
+    </ImageBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A3A17' },
+  root: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,58,23,0.80)',
+  },
   safe: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -339,7 +353,7 @@ const styles = StyleSheet.create({
   deleteBtn: { backgroundColor: 'rgba(239,68,68,0.1)' },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: '#6B7280', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  emptyText: { color: '#D1D5DB', fontSize: 15, textAlign: 'center', lineHeight: 22 },
   emptyBtn: {
     marginTop: 16, backgroundColor: '#22C55E',
     borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,
@@ -359,7 +373,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  label: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginBottom: 8, textTransform: 'uppercase' },
+  label: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.75)', marginBottom: 8, textTransform: 'uppercase' },
   field: {
     backgroundColor: '#1A1A2E', borderRadius: 12,
     borderWidth: 1, borderColor: 'rgba(74,222,128,0.15)',
@@ -373,9 +387,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)',
   },
   skillBtnActive: { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.12)' },
-  skillStar: { fontSize: 20, color: '#374151' },
+  skillStar: { fontSize: 20, color: '#D1D5DB' },
   skillStarActive: { color: '#F59E0B' },
-  skillLabel2: { fontSize: 11, fontWeight: '700', color: '#374151', marginTop: 2 },
+  skillLabel2: { fontSize: 11, fontWeight: '700', color: '#D1D5DB', marginTop: 2 },
   skillLabelActive: { color: '#F59E0B' },
   posRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
   posChip: {
@@ -384,7 +398,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10, paddingHorizontal: 4,
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)',
   },
-  posChipText: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
+  posChipText: { fontSize: 13, fontWeight: '700', color: '#D1D5DB' },
   saveBtn: {
     backgroundColor: '#22C55E', borderRadius: 14,
     height: 50, justifyContent: 'center', alignItems: 'center',

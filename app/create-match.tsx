@@ -7,11 +7,18 @@ import {
   ScrollView,
   Alert,
   Platform,
+  Modal,
+  Share,
+  Linking,
+  ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
+import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { blink } from '@/lib/blink'
 import { useAuth } from '@/hooks/useAuth'
 import type { Player, MatchType, Position } from '@/types'
@@ -31,20 +38,42 @@ const POSITIONS_INFO: Record<string, { emoji: string; color: string }> = {
   AT: { emoji: '⚡', color: '#EF4444' },
 }
 
+function posImbalance(teamA: Player[], teamB: Player[]): number {
+  return ['POR', 'DEF', 'MD', 'AT'].reduce((score, pos) => {
+    const cA = teamA.filter(p => p.position === pos).length
+    const cB = teamB.filter(p => p.position === pos).length
+    return score + Math.abs(cA - cB)
+  }, 0)
+}
+
 function balanceTeams(players: Player[]): { teamA: Player[]; teamB: Player[] } {
-  // Sort by skill descending
+  // Paso 1: distribución greedy por skill (prioridad principal)
   const sorted = [...players].sort((a, b) => b.skill - a.skill)
-  const teamA: Player[] = []
-  const teamB: Player[] = []
+  let teamA: Player[] = []
+  let teamB: Player[] = []
   let sumA = 0
   let sumB = 0
   for (const player of sorted) {
     if (sumA <= sumB) {
-      teamA.push(player)
-      sumA += player.skill
+      teamA.push(player); sumA += player.skill
     } else {
-      teamB.push(player)
-      sumB += player.skill
+      teamB.push(player); sumB += player.skill
+    }
+  }
+  // Paso 2: intercambios de mismo skill para mejorar balance de posiciones
+  let improved = true
+  while (improved) {
+    improved = false
+    const curScore = posImbalance(teamA, teamB)
+    for (let i = 0; i < teamA.length && !improved; i++) {
+      for (let j = 0; j < teamB.length && !improved; j++) {
+        if (teamA[i].skill !== teamB[j].skill) continue
+        const newA = [...teamA]; newA[i] = teamB[j]
+        const newB = [...teamB]; newB[j] = teamA[i]
+        if (posImbalance(newA, newB) < curScore) {
+          teamA = newA; teamB = newB; improved = true
+        }
+      }
     }
   }
   return { teamA, teamB }
@@ -68,6 +97,7 @@ export default function CreateMatchScreen() {
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([])
   const [teams, setTeams] = useState<{ teamA: Player[]; teamB: Player[] } | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   const limit = MATCH_TYPE_LIMITS[matchType]
 
@@ -124,22 +154,25 @@ export default function CreateMatchScreen() {
         ...teams.teamA.map((p) => ({ playerId: p.id, team: 'A' })),
         ...teams.teamB.map((p) => ({ playerId: p.id, team: 'B' })),
       ]
-      for (const mp of allPlayers) {
+      for (let i = 0; i < allPlayers.length; i++) {
         await blink.db.matchPlayers.create({
-          id: `mp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          id: `mp_${matchId}_${i}`,
           matchId,
-          playerId: mp.playerId,
-          team: mp.team,
+          playerId: allPlayers[i].playerId,
+          team: allPlayers[i].team,
+          userId: user.id,
           createdAt: new Date().toISOString(),
         })
       }
       queryClient.invalidateQueries({ queryKey: ['matches'] })
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       Alert.alert('¡Partido creado!', '🏆 ¡El partido ha sido guardado!', [
         { text: 'Ver partidos', onPress: () => router.replace('/matches-list') },
         { text: 'Nuevo partido', onPress: () => router.replace('/create-match') },
       ])
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'No se pudo guardar el partido.')
+      console.error('[create-match] Error guardando partido:', JSON.stringify(err, null, 2))
+      Alert.alert('Error al guardar', err?.message || 'No se pudo guardar el partido.\nRevisa que las tablas \'matches\' y \'match_players\' estén configuradas en el dashboard de Blink.')
     } finally {
       setSaving(false)
     }
@@ -150,10 +183,43 @@ export default function CreateMatchScreen() {
     setTeams(result)
   }
 
+  const formatLineup = (): string => {
+    if (!teams) return ''
+    const stars = (n: number) => '⭐'.repeat(n)
+    const teamAText = teams.teamA
+      .map(p => `  ${POSITIONS_INFO[p.position || '']?.emoji ?? '⚽'} ${p.name}  ${stars(p.skill)}`)
+      .join('\n')
+    const teamBText = teams.teamB
+      .map(p => `  ${POSITIONS_INFO[p.position || '']?.emoji ?? '⚽'} ${p.name}  ${stars(p.skill)}`)
+      .join('\n')
+    return `⚽ *tuPachanga — Alineación*\n📅 ${date}  ·  ${matchType.toUpperCase()}\n\n🔴 *EQUIPO A* (Media ${avgSkill(teams.teamA)}★)\n${teamAText}\n\n🔵 *EQUIPO B* (Media ${avgSkill(teams.teamB)}★)\n${teamBText}\n\n🏆 Organizado con tuPachanga`
+  }
+
+  const handleShareLineup = async () => {
+    try {
+      await Share.share({ message: formatLineup() })
+    } catch {}
+  }
+
+  const handleShareWhatsApp = async () => {
+    const text = formatLineup()
+    const url = `whatsapp://send?text=${encodeURIComponent(text)}`
+    if (await Linking.canOpenURL(url)) {
+      await Linking.openURL(url)
+    } else {
+      await Share.share({ message: text })
+    }
+  }
+
   // STEP: SETUP
   if (step === 'setup') {
     return (
-      <View style={styles.root}>
+      <ImageBackground
+        source={require('@/assets/images/background-partidos.jpg')}
+        style={styles.root}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay} />
         <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -165,38 +231,54 @@ export default function CreateMatchScreen() {
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             {/* Date */}
             <Text style={styles.sectionLabel}>📅 Fecha del partido</Text>
-            <View style={styles.dateCard}>
+            <TouchableOpacity style={styles.dateCard} onPress={() => setShowDatePicker(true)} activeOpacity={0.8}>
               <Ionicons name="calendar-outline" size={20} color="#4ADE80" />
               <Text style={styles.dateText}>{date}</Text>
-              <View style={styles.dateControls}>
-                <TouchableOpacity
-                  onPress={() => {
-                    const d = new Date(date)
-                    d.setDate(d.getDate() - 1)
-                    setDate(d.toISOString().split('T')[0])
-                  }}
-                  style={styles.dateBtnSmall}
-                >
-                  <Ionicons name="chevron-back" size={16} color="#4ADE80" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setDate(new Date().toISOString().split('T')[0])}
-                  style={styles.todayBtn}
-                >
-                  <Text style={styles.todayBtnText}>Hoy</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    const d = new Date(date)
-                    d.setDate(d.getDate() + 1)
-                    setDate(d.toISOString().split('T')[0])
-                  }}
-                  style={styles.dateBtnSmall}
-                >
-                  <Ionicons name="chevron-forward" size={16} color="#4ADE80" />
-                </TouchableOpacity>
+              <View style={styles.calendarBtn}>
+                <Ionicons name="pencil-outline" size={16} color="#4ADE80" />
               </View>
-            </View>
+            </TouchableOpacity>
+
+            {/* DatePicker (Android: modal nativo automático) */}
+            {showDatePicker && Platform.OS === 'android' && (
+              <DateTimePicker
+                value={new Date(date + 'T12:00:00')}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false)
+                  if (event.type !== 'dismissed' && selectedDate) {
+                    setDate(selectedDate.toISOString().split('T')[0])
+                  }
+                }}
+              />
+            )}
+            {/* DatePicker (iOS: modal con scroll) */}
+            <Modal
+              visible={showDatePicker && Platform.OS === 'ios'}
+              transparent
+              animationType="slide"
+            >
+              <View style={styles.datePickerOverlay}>
+                <View style={styles.datePickerContainer}>
+                  <View style={styles.datePickerHeader}>
+                    <Text style={styles.datePickerTitle}>Seleccionar fecha</Text>
+                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                      <Text style={styles.datePickerDone}>Listo ✓</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={new Date(date + 'T12:00:00')}
+                    mode="date"
+                    display="spinner"
+                    textColor="#FFFFFF"
+                    onChange={(_, selectedDate) => {
+                      if (selectedDate) setDate(selectedDate.toISOString().split('T')[0])
+                    }}
+                  />
+                </View>
+              </View>
+            </Modal>
 
             {/* Match Type */}
             <Text style={styles.sectionLabel}>⚽ Tipo de partido</Text>
@@ -220,21 +302,39 @@ export default function CreateMatchScreen() {
 
             <TouchableOpacity
               style={styles.nextBtn}
-              onPress={() => setStep('players')}
+              onPress={() => {
+                if (players.length === 0) {
+                  Alert.alert(
+                    'Sin jugadores',
+                    'Debes crear jugadores antes de organizar un partido.',
+                    [
+                      { text: 'Cancelar', style: 'cancel' },
+                      { text: 'Crear jugador', onPress: () => router.push('/create-player') },
+                    ]
+                  )
+                  return
+                }
+                setStep('players')
+              }}
               activeOpacity={0.85}
             >
               <Text style={styles.nextBtnText}>Seleccionar jugadores →</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
-      </View>
+      </ImageBackground>
     )
   }
 
   // STEP: PLAYERS
   if (step === 'players') {
     return (
-      <View style={styles.root}>
+      <ImageBackground
+        source={require('@/assets/images/background-partidos.jpg')}
+        style={styles.root}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay} />
         <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => setStep('setup')} style={styles.backBtn}>
@@ -290,7 +390,7 @@ export default function CreateMatchScreen() {
                           <Text key={i} style={{ fontSize: 11, color: i <= player.skill ? '#F59E0B' : '#374151' }}>★</Text>
                         ))}
                         {player.position && (
-                          <Text style={{ fontSize: 11, color: '#6B7280', marginLeft: 4 }}>{player.position}</Text>
+                          <Text style={{ fontSize: 11, color: '#D1D5DB', marginLeft: 4 }}>{player.position}</Text>
                         )}
                       </View>
                     </View>
@@ -309,21 +409,26 @@ export default function CreateMatchScreen() {
             </View>
           )}
         </SafeAreaView>
-      </View>
+      </ImageBackground>
     )
   }
 
   // STEP: TEAMS
   return (
-    <View style={styles.root}>
+    <ImageBackground
+      source={require('@/assets/images/background-partidos.jpg')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => setStep('players')} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="#4ADE80" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>🏆 Equipos</Text>
-          <TouchableOpacity style={styles.redoBtn} onPress={handleRedoTeams}>
-            <Ionicons name="shuffle-outline" size={20} color="#4ADE80" />
+          <TouchableOpacity style={styles.redoBtn} onPress={handleShareLineup} activeOpacity={0.85}>
+            <Ionicons name="share-social-outline" size={22} color="#4ADE80" />
           </TouchableOpacity>
         </View>
 
@@ -400,25 +505,36 @@ export default function CreateMatchScreen() {
             <Ionicons name="shuffle-outline" size={20} color="#4ADE80" />
             <Text style={styles.redoBtnText}>Rehacer equipos</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={[styles.saveMatchBtn, saving && styles.saveBtnDisabled]}
             onPress={handleSaveMatch}
             disabled={saving}
             activeOpacity={0.85}
           >
-            <Ionicons name="checkmark-circle-outline" size={22} color="#0A3A17" />
-            <Text style={styles.saveMatchBtnText}>
-              {saving ? 'Guardando...' : '💾 Guardar partido'}
-            </Text>
+            <LinearGradient
+              colors={saving ? ['#374151', '#374151'] : ['#22C55E', '#16A34A']}
+              style={styles.saveMatchBtn}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
+              <Text style={styles.saveMatchBtnText}>
+                {saving ? 'Guardando...' : '💾 Guardar partido'}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ImageBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A3A17' },
+  root: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,58,23,0.80)',
+  },
   safe: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -438,7 +554,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
   scroll: { padding: 16, paddingBottom: 40 },
   sectionLabel: {
-    fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.6)',
+    fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)',
     marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5,
   },
   // Date
@@ -449,17 +565,27 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(74,222,128,0.15)',
   },
   dateText: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
-  dateControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dateBtnSmall: {
-    width: 30, height: 30, borderRadius: 8,
+  calendarBtn: {
+    width: 32, height: 32, borderRadius: 8,
     backgroundColor: 'rgba(74,222,128,0.1)',
     justifyContent: 'center', alignItems: 'center',
   },
-  todayBtn: {
-    backgroundColor: 'rgba(74,222,128,0.15)',
-    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
+  // DatePicker modal (iOS)
+  datePickerOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end',
   },
-  todayBtnText: { fontSize: 12, fontWeight: '700', color: '#4ADE80' },
+  datePickerContainer: {
+    backgroundColor: '#111827',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingBottom: 34, borderTopWidth: 1,
+    borderColor: 'rgba(74,222,128,0.15)',
+  },
+  datePickerHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10,
+  },
+  datePickerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  datePickerDone: { fontSize: 15, fontWeight: '800', color: '#22C55E' },
   // Type
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   typeCard: {
@@ -470,10 +596,10 @@ const styles = StyleSheet.create({
   },
   typeCardActive: { borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,0.12)' },
   typeEmoji: { fontSize: 28, marginBottom: 6 },
-  typeKey: { fontSize: 18, fontWeight: '900', color: '#6B7280', marginBottom: 2 },
+  typeKey: { fontSize: 18, fontWeight: '900', color: '#D1D5DB', marginBottom: 2 },
   typeKeyActive: { color: '#22C55E' },
-  typeLabel: { fontSize: 11, color: '#4B5563', marginBottom: 2 },
-  typeTotal: { fontSize: 10, color: '#374151' },
+  typeLabel: { fontSize: 11, color: '#D1D5DB', marginBottom: 2 },
+  typeTotal: { fontSize: 10, color: '#D1D5DB' },
   nextBtn: {
     backgroundColor: '#22C55E', borderRadius: 14, height: 54,
     justifyContent: 'center', alignItems: 'center',
@@ -557,7 +683,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: '#111827', borderRadius: 12, padding: 12, alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
   },
-  infoBadgeLabel: { fontSize: 10, color: '#6B7280', marginBottom: 2 },
+  infoBadgeLabel: { fontSize: 10, color: '#D1D5DB', marginBottom: 2 },
   infoBadgeValue: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
   redoBtnLarge: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -574,10 +700,23 @@ const styles = StyleSheet.create({
   saveBtnDisabled: { opacity: 0.6 },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: '#6B7280', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  emptyText: { color: '#D1D5DB', fontSize: 15, textAlign: 'center', lineHeight: 22 },
   emptyBtn: {
     marginTop: 16, backgroundColor: '#22C55E',
     borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,
   },
   emptyBtnText: { color: '#0A3A17', fontWeight: '700' },
+  // Compartir
+  shareRow: { flexDirection: 'row', gap: 10, marginHorizontal: 20, marginBottom: 10 },
+  shareWhatsAppBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#25D366', borderRadius: 14, height: 50,
+  },
+  shareWhatsAppText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
+  shareOtherBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: 'rgba(74,222,128,0.1)', borderRadius: 14, height: 50,
+    borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)',
+  },
+  shareOtherText: { fontSize: 14, fontWeight: '700', color: '#4ADE80' },
 })

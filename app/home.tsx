@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
   View,
   Text,
@@ -5,13 +6,15 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
+import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { blink } from '@/lib/blink'
 import { useAuth } from '@/hooks/useAuth'
-import { FieldLines } from '@/components/FootballBackground'
 
 interface MenuItemProps {
   icon: any
@@ -25,7 +28,11 @@ interface MenuItemProps {
 
 function MenuItem({ icon, emoji, title, subtitle, color, bgColor, onPress }: MenuItemProps) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.82}>
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress() }}
+      activeOpacity={0.82}
+    >
       <View style={[styles.menuIcon, { backgroundColor: bgColor }]}>
         <Text style={styles.menuEmoji}>{emoji}</Text>
       </View>
@@ -41,7 +48,14 @@ function MenuItem({ icon, emoji, title, subtitle, color, bgColor, onPress }: Men
 }
 
 export default function HomeScreen() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+
+  // Si el estado de auth cambia a null (signOut), redirigir automáticamente
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/auth')
+    }
+  }, [user, loading])
 
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
@@ -50,7 +64,11 @@ export default function HomeScreen() {
         text: 'Salir',
         style: 'destructive',
         onPress: async () => {
-          await blink.auth.signOut()
+          try {
+            await blink.auth.signOut()
+          } catch (_) {
+            // ignorar error del SDK, navegar igualmente
+          }
           router.replace('/auth')
         },
       },
@@ -58,8 +76,12 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <FieldLines />
+    <ImageBackground
+      source={require('@/assets/images/background-menu.jpeg')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>
@@ -130,28 +152,30 @@ export default function HomeScreen() {
           />
 
           {/* Stats decoration */}
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statEmoji}>🥅</Text>
-              <Text style={styles.statLabel}>Portería lista</Text>
+          <LinearGradient
+            colors={['rgba(34,197,94,0.08)', 'rgba(34,197,94,0.03)']}
+            style={styles.promoCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.promoEmoji}>🏆</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.promoTitle}>Organiza partidos perfectos</Text>
+              <Text style={styles.promoSub}>Equipos equilibrados automáticamente por posición y nivel</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statEmoji}>🟠</Text>
-              <Text style={styles.statLabel}>Conos puestos</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statEmoji}>🦺</Text>
-              <Text style={styles.statLabel}>Petos listos</Text>
-            </View>
-          </View>
+          </LinearGradient>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </ImageBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A3A17' },
+  root: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,58,23,0.78)',
+  },
   safe: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -161,7 +185,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  welcomeText: { fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: '500' },
+  welcomeText: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
   userEmail: { fontSize: 13, color: '#4ADE80', fontWeight: '600', maxWidth: 220 },
   logoutBtn: {
     width: 40,
@@ -206,12 +230,12 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111827',
+    backgroundColor: '#0D1F0D',
     borderRadius: 16,
     marginBottom: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: 'rgba(74,222,128,0.12)',
   },
   menuIcon: {
     width: 52,
@@ -223,8 +247,8 @@ const styles = StyleSheet.create({
   },
   menuEmoji: { fontSize: 26 },
   menuText: { flex: 1 },
-  menuTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', marginBottom: 2 },
-  menuSubtitle: { fontSize: 12, color: '#6B7280', fontWeight: '400' },
+  menuTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', marginBottom: 3 },
+  menuSubtitle: { fontSize: 13, color: '#D1D5DB', fontWeight: '400', lineHeight: 18 },
   menuArrow: {
     width: 32,
     height: 32,
@@ -247,5 +271,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
   },
   statEmoji: { fontSize: 22, marginBottom: 4 },
-  statLabel: { fontSize: 10, color: '#6B7280', fontWeight: '500', textAlign: 'center' },
+  statLabel: { fontSize: 10, color: '#D1D5DB', fontWeight: '500', textAlign: 'center' },
+  promoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(34,197,94,0.2)',
+  },
+  promoEmoji: { fontSize: 32 },
+  promoTitle: { fontSize: 14, fontWeight: '700', color: '#FFFFFF', marginBottom: 4 },
+  promoSub: { fontSize: 12, color: '#D1D5DB', lineHeight: 17 },
 })
