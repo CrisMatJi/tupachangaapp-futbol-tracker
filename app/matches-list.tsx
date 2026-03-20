@@ -11,9 +11,10 @@ import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { blink } from '@/lib/blink'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type { Match } from '@/types'
+import { formatDate } from '@/utils/date'
 
 const MATCH_EMOJIS: Record<string, string> = {
   '5v5': '⚡',
@@ -22,37 +23,37 @@ const MATCH_EMOJIS: Record<string, string> = {
   '11v11': '🌟',
 }
 
-function formatDate(dateStr: string) {
-  const [y, m, d] = dateStr.split('-')
-  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-  return `${d} ${months[parseInt(m) - 1]} ${y}`
-}
-
 export default function MatchesListScreen() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
-  const { data: matches = [], isLoading } = useQuery({
+  const { data: matches = [], isLoading, isError, error } = useQuery({
     queryKey: ['matches', user?.id],
     queryFn: async () => {
       if (!user) return []
-      const res = await blink.db.matches.list({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-      })
-      return res as Match[]
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []).map((r: any) => ({
+        id: r.id, userId: r.user_id, date: r.date,
+        matchType: r.match_type, status: r.status,
+        scoreA: r.score_a, scoreB: r.score_b,
+        mvpPlayerId: r.mvp_player_id, createdAt: r.created_at,
+      })) as Match[]
     },
     enabled: !!user,
   })
 
   const deleteMutation = useMutation({
     mutationFn: async (matchId: string) => {
-      // Delete match players first
-      const mp = await blink.db.matchPlayers.list({ where: { matchId } })
-      for (const p of mp) {
-        await blink.db.matchPlayers.delete(p.id)
-      }
-      await blink.db.matches.delete(matchId)
+      // Borrar match_players en bloque primero
+      const { error: mpError } = await supabase.from('match_players').delete().eq('match_id', matchId)
+      if (mpError) throw mpError
+      const { error } = await supabase.from('matches').delete().eq('id', matchId)
+      if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['matches'] }),
     onError: (err: any) => Alert.alert('Error', err?.message),
@@ -133,6 +134,13 @@ export default function MatchesListScreen() {
           </TouchableOpacity>
         </View>
 
+        {isError && (
+          <View style={{ backgroundColor: '#7F1D1D', margin: 12, borderRadius: 10, padding: 12 }}>
+            <Text style={{ color: '#FCA5A5', fontWeight: 'bold', marginBottom: 4 }}>⚠️ Error al cargar partidos</Text>
+            <Text style={{ color: '#FCA5A5', fontSize: 12 }}>{(error as any)?.message ?? String(error)}</Text>
+          </View>
+        )}
+
         <FlatList
           data={matches}
           keyExtractor={(item) => item.id}
@@ -143,7 +151,7 @@ export default function MatchesListScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🏟️</Text>
               <Text style={styles.emptyText}>
-                {isLoading ? 'Cargando partidos...' : 'No hay partidos aún.\n¡Organiza uno!'}
+                {isLoading ? 'Cargando partidos...' : isError ? 'Error de conexión' : 'No hay partidos aún.\n¡Organiza uno!'}
               </Text>
               {!isLoading && (
                 <TouchableOpacity

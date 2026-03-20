@@ -19,10 +19,12 @@ import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { blink } from '@/lib/blink'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type { Player, MatchType, Position } from '@/types'
 import { MATCH_TYPE_LIMITS } from '@/types'
+import { balanceTeams, avgSkill } from '@/utils/teamBalance'
+import { POSITIONS_INFO, getPositionInfo } from '@/utils/positions'
 
 const MATCH_TYPES: { key: MatchType; label: string; emoji: string; total: number }[] = [
   { key: '5v5', label: '5 contra 5', emoji: '🥅', total: 10 },
@@ -31,58 +33,7 @@ const MATCH_TYPES: { key: MatchType; label: string; emoji: string; total: number
   { key: '11v11', label: '11 contra 11', emoji: '🌟', total: 22 },
 ]
 
-const POSITIONS_INFO: Record<string, { emoji: string; color: string }> = {
-  POR: { emoji: '🧤', color: '#F59E0B' },
-  DEF: { emoji: '🛡️', color: '#3B82F6' },
-  MD: { emoji: '🎯', color: '#8B5CF6' },
-  AT: { emoji: '⚡', color: '#EF4444' },
-}
 
-function posImbalance(teamA: Player[], teamB: Player[]): number {
-  return ['POR', 'DEF', 'MD', 'AT'].reduce((score, pos) => {
-    const cA = teamA.filter(p => p.position === pos).length
-    const cB = teamB.filter(p => p.position === pos).length
-    return score + Math.abs(cA - cB)
-  }, 0)
-}
-
-function balanceTeams(players: Player[]): { teamA: Player[]; teamB: Player[] } {
-  // Paso 1: distribución greedy por skill (prioridad principal)
-  const sorted = [...players].sort((a, b) => b.skill - a.skill)
-  let teamA: Player[] = []
-  let teamB: Player[] = []
-  let sumA = 0
-  let sumB = 0
-  for (const player of sorted) {
-    if (sumA <= sumB) {
-      teamA.push(player); sumA += player.skill
-    } else {
-      teamB.push(player); sumB += player.skill
-    }
-  }
-  // Paso 2: intercambios de mismo skill para mejorar balance de posiciones
-  let improved = true
-  while (improved) {
-    improved = false
-    const curScore = posImbalance(teamA, teamB)
-    for (let i = 0; i < teamA.length && !improved; i++) {
-      for (let j = 0; j < teamB.length && !improved; j++) {
-        if (teamA[i].skill !== teamB[j].skill) continue
-        const newA = [...teamA]; newA[i] = teamB[j]
-        const newB = [...teamB]; newB[j] = teamA[i]
-        if (posImbalance(newA, newB) < curScore) {
-          teamA = newA; teamB = newB; improved = true
-        }
-      }
-    }
-  }
-  return { teamA, teamB }
-}
-
-function avgSkill(players: Player[]) {
-  if (!players.length) return 0
-  return (players.reduce((acc, p) => acc + p.skill, 0) / players.length).toFixed(1)
-}
 
 export default function CreateMatchScreen() {
   const { user } = useAuth()
@@ -105,11 +56,16 @@ export default function CreateMatchScreen() {
     queryKey: ['players', user?.id],
     queryFn: async () => {
       if (!user) return []
-      const res = await blink.db.players.list({
-        where: { userId: user.id },
-        orderBy: { name: 'asc' },
-      })
-      return res as Player[]
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name')
+      if (error) throw error
+      return (data ?? []).map((r: any) => ({
+        id: r.id, userId: r.user_id, name: r.name,
+        skill: r.skill, position: r.position, createdAt: r.created_at,
+      })) as Player[]
     },
     enabled: !!user,
   })
@@ -141,29 +97,51 @@ export default function CreateMatchScreen() {
     if (!user || !teams) return
     setSaving(true)
     try {
-      const matchId = `match_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
-      await blink.db.matches.create({
-        id: matchId,
-        userId: user.id,
-        date,
-        matchType,
-        status: 'created',
-        createdAt: new Date().toISOString(),
-      })
-      const allPlayers = [
-        ...teams.teamA.map((p) => ({ playerId: p.id, team: 'A' })),
-        ...teams.teamB.map((p) => ({ playerId: p.id, team: 'B' })),
-      ]
-      for (let i = 0; i < allPlayers.length; i++) {
-        await blink.db.matchPlayers.create({
-          id: `mp_${matchId}_${i}`,
-          matchId,
-          playerId: allPlayers[i].playerId,
-          team: allPlayers[i].team,
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-        })
+      // Comprobar si ya existe un partido en esa fecha
+      const { data: existing } = await supabase
+        .from('matches')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('date', date)
+        .limit(1)
+      if (existing && existing.length > 0) {
+        Alert.alert('Fecha duplicada', `Ya tienes un partido el ${date}. Solo se permite un partido por día.`)
+        setSaving(false)
+        return
       }
+
+      const matchId = `match_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+      const { error: matchError } = await supabase.from('matches').insert({
+        id: matchId,
+        user_id: user.id,
+        date,
+        match_type: matchType,
+        status: 'created',
+        created_at: new Date().toISOString(),
+      })
+      if (matchError) throw matchError
+
+      const rows = [
+        ...teams.teamA.map((p, i) => ({
+          id: `mp_${matchId}_A_${i}`,
+          match_id: matchId,
+          player_id: p.id,
+          team: 'A',
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+        })),
+        ...teams.teamB.map((p, i) => ({
+          id: `mp_${matchId}_B_${i}`,
+          match_id: matchId,
+          player_id: p.id,
+          team: 'B',
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+        })),
+      ]
+      const { error: mpError } = await supabase.from('match_players').insert(rows)
+      if (mpError) throw mpError
+
       queryClient.invalidateQueries({ queryKey: ['matches'] })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       Alert.alert('¡Partido creado!', '🏆 ¡El partido ha sido guardado!', [
@@ -172,7 +150,7 @@ export default function CreateMatchScreen() {
       ])
     } catch (err: any) {
       console.error('[create-match] Error guardando partido:', JSON.stringify(err, null, 2))
-      Alert.alert('Error al guardar', err?.message || 'No se pudo guardar el partido.\nRevisa que las tablas \'matches\' y \'match_players\' estén configuradas en el dashboard de Blink.')
+      Alert.alert('Error al guardar', err?.message || 'No se pudo guardar el partido.')
     } finally {
       setSaving(false)
     }
@@ -185,14 +163,13 @@ export default function CreateMatchScreen() {
 
   const formatLineup = (): string => {
     if (!teams) return ''
-    const stars = (n: number) => '⭐'.repeat(n)
     const teamAText = teams.teamA
-      .map(p => `  ${POSITIONS_INFO[p.position || '']?.emoji ?? '⚽'} ${p.name}  ${stars(p.skill)}`)
+      .map(p => `  ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`)
       .join('\n')
     const teamBText = teams.teamB
-      .map(p => `  ${POSITIONS_INFO[p.position || '']?.emoji ?? '⚽'} ${p.name}  ${stars(p.skill)}`)
+      .map(p => `  ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`)
       .join('\n')
-    return `⚽ *tuPachanga — Alineación*\n📅 ${date}  ·  ${matchType.toUpperCase()}\n\n🔴 *EQUIPO A* (Media ${avgSkill(teams.teamA)}★)\n${teamAText}\n\n🔵 *EQUIPO B* (Media ${avgSkill(teams.teamB)}★)\n${teamBText}\n\n🏆 Organizado con tuPachanga`
+    return `⚽ *tuPachanga — Alineación*\n📅 ${date}  ·  ${matchType.toUpperCase()}\n\n🔴 *EQUIPO A*\n${teamAText}\n\n🔵 *EQUIPO B*\n${teamBText}\n\n🏆 Organizado con tuPachanga`
   }
 
   const handleShareLineup = async () => {

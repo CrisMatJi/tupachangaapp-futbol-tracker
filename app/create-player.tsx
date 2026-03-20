@@ -14,19 +14,15 @@ import {
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { blink } from '@/lib/blink'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Position } from '@/types'
-
-const POSITIONS: { key: Position; label: string; emoji: string }[] = [
-  { key: 'POR', label: 'Portero', emoji: '🧤' },
-  { key: 'DEF', label: 'Defensa', emoji: '🛡️' },
-  { key: 'MD', label: 'Mediocampista', emoji: '🎯' },
-  { key: 'AT', label: 'Atacante', emoji: '⚡' },
-]
+import { POSITIONS } from '@/utils/positions'
 
 export default function CreatePlayerScreen() {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [skill, setSkill] = useState(3)
   const [position, setPosition] = useState<Position | null>(null)
@@ -45,14 +41,29 @@ export default function CreatePlayerScreen() {
 
     setLoading(true)
     try {
-      await blink.db.players.create({
+      // Comprobar si ya existe un jugador con ese nombre
+      const { data: existing } = await supabase
+        .from('players')
+        .select('id')
+        .eq('user_id', user.id)
+        .ilike('name', name.trim())
+        .limit(1)
+      if (existing && existing.length > 0) {
+        Alert.alert('Nombre duplicado', `Ya tienes un jugador llamado "${name.trim()}". Elige otro nombre.`)
+        setLoading(false)
+        return
+      }
+
+      const { error } = await supabase.from('players').insert({
         id: `player_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        userId: user.id,
+        user_id: user.id,
         name: name.trim(),
         skill,
         position: position || undefined,
-        createdAt: new Date().toISOString(),
-      } as any)
+        created_at: new Date().toISOString(),
+      })
+      if (error) throw error
+      await queryClient.invalidateQueries({ queryKey: ['players'] })
       Alert.alert('¡Listo!', `${name.trim()} ha sido añadido al equipo. 🎉`, [
         { text: 'Crear otro', onPress: () => { setName(''); setSkill(3); setPosition(null) } },
         { text: 'Ir al menú', onPress: () => router.replace('/home') },

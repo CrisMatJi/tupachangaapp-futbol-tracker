@@ -26,6 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="players-list" />
         <Stack.Screen name="matches-list" />
         <Stack.Screen name="match-detail" />
+        <Stack.Screen name="vote/[matchId]" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="light" />

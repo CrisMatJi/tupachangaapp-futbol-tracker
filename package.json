@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 npx expo start --web --port 3000",
-    "start": "EXPO_NO_TELEMETRY=1 npx expo start",
+    "start": "EXPO_NO_TELEMETRY=1 npx expo start --port 8081",
     "start:web": "EXPO_NO_TELEMETRY=1 npx expo start --web",
-    "start:ios": "EXPO_NO_TELEMETRY=1 npx expo start --ios",
+    "start:ios": "xcrun simctl boot 5F33BE8C-5B63-418D-A351-E1269D08DE84 2>/dev/null; open -a Simulator; EXPO_NO_TELEMETRY=1 npx expo start --ios",
     "start:android": "EXPO_NO_TELEMETRY=1 npx expo start --android",
     "build:web": "EXPO_NO_TELEMETRY=1 npx expo export --platform web",
     "build:ios": "EXPO_NO_TELEMETRY=1 eas build --platform ios",
@@ -21,7 +21,10 @@
     "upgrade": "EXPO_NO_TELEMETRY=1 npx expo upgrade",
     "lint": "EXPO_NO_TELEMETRY=1 npx expo lint",
     "prebuild": "EXPO_NO_TELEMETRY=1 npx expo prebuild",
-    "prebuild:clean": "EXPO_NO_TELEMETRY=1 npx expo prebuild --clean"
+    "prebuild:clean": "EXPO_NO_TELEMETRY=1 npx expo prebuild --clean",
+    "test": "jest --watchAll=false",
+    "test:watch": "jest --watchAll",
+    "test:coverage": "jest --coverage --watchAll=false"
   },
   "dependencies": {
     "@blinkdotnew/sdk": "2.3.7",
@@ -29,11 +32,14 @@
     "@legendapp/list": "^2.0.16",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
+    "@supabase/supabase-js": "^2.99.1",
     "@tanstack/react-query": "^5.90.0",
     "expo": "~54.0.25",
+    "expo-auth-session": "~7.0.10",
     "expo-av": "~16.0.7",
     "expo-blur": "~15.0.7",
     "expo-constants": "~18.0.10",
+    "expo-crypto": "~15.0.8",
     "expo-font": "~14.0.9",
     "expo-haptics": "~15.0.7",
     "expo-image": "~3.0.10",
@@ -65,9 +71,14 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo/ngrok": "^4.1.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.10",
     "eslint": "^9.31.0",
     "eslint-config-expo": "~10.0.0",
+    "jest": "^30.3.0",
+    "jest-expo": "^55.0.11",
     "typescript": "~5.9.2"
   }
 }

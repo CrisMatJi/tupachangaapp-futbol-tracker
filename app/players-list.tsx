@@ -16,16 +16,10 @@ import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { blink } from '@/lib/blink'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type { Player, Position } from '@/types'
-
-const POSITIONS: { key: Position; label: string; emoji: string; color: string }[] = [
-  { key: 'POR', label: 'Portero', emoji: '🧤', color: '#F59E0B' },
-  { key: 'DEF', label: 'Defensa', emoji: '🛡️', color: '#3B82F6' },
-  { key: 'MD', label: 'Mediocampista', emoji: '🎯', color: '#8B5CF6' },
-  { key: 'AT', label: 'Atacante', emoji: '⚡', color: '#EF4444' },
-]
+import { POSITIONS } from '@/utils/positions'
 
 const posInfo = (pos?: string) => POSITIONS.find((p) => p.key === pos)
 
@@ -50,23 +44,30 @@ export default function PlayersListScreen() {
   const [editPosition, setEditPosition] = useState<Position | null>(null)
   const [search, setSearch] = useState('')
 
-  const { data: players = [], isLoading } = useQuery({
+  const { data: players = [], isLoading, isError, error } = useQuery({
     queryKey: ['players', user?.id],
     queryFn: async () => {
       if (!user) return []
-      const res = await blink.db.players.list({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-      })
-      return res as Player[]
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []).map((r: any) => ({
+        id: r.id, userId: r.user_id, name: r.name,
+        skill: r.skill, position: r.position, createdAt: r.created_at,
+      })) as Player[]
     },
     enabled: !!user,
   })
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<Player> & { id: string }) => {
-      const { id, ...rest } = data
-      await blink.db.players.update(id, rest)
+      const { error } = await supabase.from('players').update({
+        name: data.name, skill: data.skill, position: data.position,
+      }).eq('id', data.id)
+      if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['players'] })
@@ -78,7 +79,8 @@ export default function PlayersListScreen() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await blink.db.players.delete(id)
+      const { error } = await supabase.from('players').delete().eq('id', id)
+      if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['players'] }),
   })
@@ -186,6 +188,13 @@ export default function PlayersListScreen() {
         </View>
 
         {/* List */}
+        {isError && (
+          <View style={{ backgroundColor: '#7F1D1D', margin: 12, borderRadius: 10, padding: 12 }}>
+            <Text style={{ color: '#FCA5A5', fontWeight: 'bold', marginBottom: 4 }}>⚠️ Error al cargar jugadores</Text>
+            <Text style={{ color: '#FCA5A5', fontSize: 12 }}>{(error as any)?.message ?? String(error)}</Text>
+          </View>
+        )}
+
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
@@ -195,7 +204,7 @@ export default function PlayersListScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>⚽</Text>
               <Text style={styles.emptyText}>
-                {isLoading ? 'Cargando jugadores...' : 'No hay jugadores aún.\n¡Crea el primero!'}
+                {isLoading ? 'Cargando jugadores...' : isError ? 'Error de conexión' : 'No hay jugadores aún.\n¡Crea el primero!'}
               </Text>
               {!isLoading && (
                 <TouchableOpacity

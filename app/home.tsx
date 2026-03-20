@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { blink } from '@/lib/blink'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
 interface MenuItemProps {
@@ -65,7 +65,7 @@ export default function HomeScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await blink.auth.signOut()
+            await supabase.auth.signOut()
           } catch (_) {
             // ignorar error del SDK, navegar igualmente
           }
