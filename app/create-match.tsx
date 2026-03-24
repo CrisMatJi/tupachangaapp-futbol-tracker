@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -26,11 +27,11 @@ import { MATCH_TYPE_LIMITS } from '@/types'
 import { balanceTeams, avgSkill } from '@/utils/teamBalance'
 import { POSITIONS_INFO, getPositionInfo } from '@/utils/positions'
 
-const MATCH_TYPES: { key: MatchType; label: string; emoji: string; total: number }[] = [
-  { key: '5v5', label: '5 contra 5', emoji: '🥅', total: 10 },
-  { key: '6v6', label: '6 contra 6', emoji: '⚡', total: 12 },
-  { key: '7v7', label: '7 contra 7', emoji: '🏆', total: 14 },
-  { key: '11v11', label: '11 contra 11', emoji: '🌟', total: 22 },
+const MATCH_TYPES: { key: MatchType; label: string; iconName: string; total: number }[] = [
+  { key: '5v5',   label: '5 contra 5',   iconName: 'soccer',         total: 10 },
+  { key: '6v6',   label: '6 contra 6',   iconName: 'whistle-outline', total: 12 },
+  { key: '7v7',   label: '7 contra 7',   iconName: 'trophy-outline',  total: 14 },
+  { key: '11v11', label: '11 contra 11', iconName: 'soccer-field',    total: 22 },
 ]
 
 
@@ -144,7 +145,7 @@ export default function CreateMatchScreen() {
 
       queryClient.invalidateQueries({ queryKey: ['matches'] })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      Alert.alert('¡Partido creado!', '🏆 ¡El partido ha sido guardado!', [
+      Alert.alert('¡Partido creado!', '¡El partido ha sido guardado!', [
         { text: 'Ver partidos', onPress: () => router.replace('/matches-list') },
         { text: 'Nuevo partido', onPress: () => router.replace('/create-match') },
       ])
@@ -164,10 +165,10 @@ export default function CreateMatchScreen() {
   const formatLineup = (): string => {
     if (!teams) return ''
     const teamAText = teams.teamA
-      .map(p => `  ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`)
+      .map(p => `  [${p.position ?? '?'}] ${p.name}`)
       .join('\n')
     const teamBText = teams.teamB
-      .map(p => `  ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`)
+      .map(p => `  [${p.position ?? '?'}] ${p.name}`)
       .join('\n')
     return `⚽ *tuPachanga — Alineación*\n📅 ${date}  ·  ${matchType.toUpperCase()}\n\n🔴 *EQUIPO A*\n${teamAText}\n\n🔵 *EQUIPO B*\n${teamBText}\n\n🏆 Organizado con tuPachanga`
   }
@@ -202,12 +203,18 @@ export default function CreateMatchScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={22} color="#4ADE80" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>🏆 Nuevo Partido</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="trophy-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.headerTitle}>Nuevo Partido</Text>
+            </View>
             <View style={{ width: 40 }} />
           </View>
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             {/* Date */}
-            <Text style={styles.sectionLabel}>📅 Fecha del partido</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <Ionicons name="calendar-outline" size={14} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.sectionLabel}>Fecha del partido</Text>
+            </View>
             <TouchableOpacity style={styles.dateCard} onPress={() => setShowDatePicker(true)} activeOpacity={0.8}>
               <Ionicons name="calendar-outline" size={20} color="#4ADE80" />
               <Text style={styles.dateText}>{date}</Text>
@@ -258,7 +265,10 @@ export default function CreateMatchScreen() {
             </Modal>
 
             {/* Match Type */}
-            <Text style={styles.sectionLabel}>⚽ Tipo de partido</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <MaterialCommunityIcons name="soccer" size={14} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.sectionLabel}>Tipo de partido</Text>
+            </View>
             <View style={styles.typeGrid}>
               {MATCH_TYPES.map((mt) => (
                 <TouchableOpacity
@@ -267,7 +277,12 @@ export default function CreateMatchScreen() {
                   onPress={() => { setMatchType(mt.key); setSelectedPlayers([]) }}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.typeEmoji}>{mt.emoji}</Text>
+                  <MaterialCommunityIcons
+                    name={mt.iconName as any}
+                    size={28}
+                    color={matchType === mt.key ? '#22C55E' : '#9CA3AF'}
+                    style={{ marginBottom: 6 }}
+                  />
                   <Text style={[styles.typeKey, matchType === mt.key && styles.typeKeyActive]}>
                     {mt.key}
                   </Text>
@@ -317,7 +332,10 @@ export default function CreateMatchScreen() {
             <TouchableOpacity onPress={() => setStep('setup')} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={22} color="#4ADE80" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>👥 Elegir Jugadores</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="people-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.headerTitle}>Elegir Jugadores</Text>
+            </View>
             <View style={{ width: 40 }} />
           </View>
 
@@ -335,7 +353,7 @@ export default function CreateMatchScreen() {
           <ScrollView contentContainerStyle={styles.playerList} showsVerticalScrollIndicator={false}>
             {players.length === 0 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyEmoji}>⚽</Text>
+                <MaterialCommunityIcons name="account-group-outline" size={56} color="#4ADE80" style={{ marginBottom: 12 }} />
                 <Text style={styles.emptyText}>No tienes jugadores.\n¡Crea jugadores primero!</Text>
                 <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/create-player')}>
                   <Text style={styles.emptyBtnText}>Crear jugador</Text>
@@ -356,7 +374,11 @@ export default function CreateMatchScreen() {
                       {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
                     </View>
                     <View style={styles.playerAvatarSmall}>
-                      <Text style={{ fontSize: 18 }}>{pos ? pos.emoji : '⚽'}</Text>
+                      <MaterialCommunityIcons
+                        name={(pos ? pos.iconName : 'soccer') as any}
+                        size={18}
+                        color={pos ? pos.color : '#4ADE80'}
+                      />
                     </View>
                     <View style={styles.playerInfo2}>
                       <Text style={[styles.playerName, isSelected && { color: '#4ADE80' }]}>
@@ -403,7 +425,10 @@ export default function CreateMatchScreen() {
           <TouchableOpacity onPress={() => setStep('players')} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="#4ADE80" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>🏆 Equipos</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="trophy-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.headerTitle}>Equipos</Text>
+          </View>
           <TouchableOpacity style={styles.redoBtn} onPress={handleShareLineup} activeOpacity={0.85}>
             <Ionicons name="share-social-outline" size={22} color="#4ADE80" />
           </TouchableOpacity>
@@ -414,14 +439,22 @@ export default function CreateMatchScreen() {
             {/* Team A */}
             <View style={[styles.teamCard, styles.teamCardA]}>
               <View style={styles.teamHeader}>
-                <Text style={styles.teamHeaderText}>🔴 EQUIPO A</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' }} />
+                  <Text style={styles.teamHeaderText}>EQUIPO A</Text>
+                </View>
                 <Text style={styles.teamAvg}>Media: {avgSkill(teams?.teamA || [])}</Text>
               </View>
               {teams?.teamA.map((p) => {
                 const pos = p.position ? POSITIONS_INFO[p.position] : null
                 return (
                   <View key={p.id} style={styles.teamPlayerRow}>
-                    <Text style={{ fontSize: 16, marginRight: 8 }}>{pos ? pos.emoji : '⚽'}</Text>
+                    <MaterialCommunityIcons
+                      name={(pos ? pos.iconName : 'soccer') as any}
+                      size={16}
+                      color={pos ? pos.color : '#4ADE80'}
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.teamPlayerName}>{p.name}</Text>
                     <View style={{ flexDirection: 'row', gap: 1 }}>
                       {[1, 2, 3, 4, 5].map((i) => (
@@ -445,14 +478,22 @@ export default function CreateMatchScreen() {
             {/* Team B */}
             <View style={[styles.teamCard, styles.teamCardB]}>
               <View style={styles.teamHeader}>
-                <Text style={styles.teamHeaderText}>🔵 EQUIPO B</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#3B82F6' }} />
+                  <Text style={styles.teamHeaderText}>EQUIPO B</Text>
+                </View>
                 <Text style={styles.teamAvg}>Media: {avgSkill(teams?.teamB || [])}</Text>
               </View>
               {teams?.teamB.map((p) => {
                 const pos = p.position ? POSITIONS_INFO[p.position] : null
                 return (
                   <View key={p.id} style={styles.teamPlayerRow}>
-                    <Text style={{ fontSize: 16, marginRight: 8 }}>{pos ? pos.emoji : '⚽'}</Text>
+                    <MaterialCommunityIcons
+                      name={(pos ? pos.iconName : 'soccer') as any}
+                      size={16}
+                      color={pos ? pos.color : '#4ADE80'}
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.teamPlayerName}>{p.name}</Text>
                     <View style={{ flexDirection: 'row', gap: 1 }}>
                       {[1, 2, 3, 4, 5].map((i) => (
@@ -496,7 +537,7 @@ export default function CreateMatchScreen() {
             >
               <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
               <Text style={styles.saveMatchBtnText}>
-                {saving ? 'Guardando...' : '💾 Guardar partido'}
+                {saving ? 'Guardando...' : 'Guardar partido'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -532,7 +573,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40 },
   sectionLabel: {
     fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)',
-    marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5,
+    textTransform: 'uppercase', letterSpacing: 0.5,
   },
   // Date
   dateCard: {

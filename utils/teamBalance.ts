@@ -22,13 +22,17 @@ function posImbalance(teamA: Player[], teamB: Player[]): number {
  * 2. Intercambios de jugadores con el mismo skill para mejorar el balance de posiciones.
  */
 export function balanceTeams(players: Player[]): { teamA: Player[]; teamB: Player[] } {
-  const sorted = [...players].sort((a, b) => b.skill - a.skill)
+  // Shuffle players with the same skill so repeated calls produce different distributions
+  const shuffled = [...players].sort((a, b) => {
+    const diff = b.skill - a.skill
+    return diff !== 0 ? diff : Math.random() - 0.5
+  })
   let teamA: Player[] = []
   let teamB: Player[] = []
   let sumA = 0
   let sumB = 0
 
-  for (const player of sorted) {
+  for (const player of shuffled) {
     if (sumA <= sumB) {
       teamA.push(player)
       sumA += player.skill

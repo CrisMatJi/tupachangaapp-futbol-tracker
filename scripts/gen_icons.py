@@ -74,9 +74,51 @@ def make_icon(size, path, padding_ratio=0.10):
     print(f'  Saved {path} ({size}x{size})')
 
 
+def make_feature_graphic(path='assets/images/feature-graphic.png'):
+    """Generate 1024x500 feature graphic for Google Play Store."""
+    W, H = 1024, 500
+    GREEN_DARK  = (10, 61, 22)
+    GREEN_MID   = (16, 100, 35)
+    WHITE       = (255, 255, 255)
+
+    canvas = Image.new('RGB', (W, H), GREEN_DARK)
+    draw   = ImageDraw.Draw(canvas)
+
+    # Simple gradient-like stripes (diagonal)
+    for i in range(0, W + H, 60):
+        draw.line([(i, 0), (i - H, H)], fill=GREEN_MID, width=30)
+
+    # Load and place ball on right side
+    src = Image.open(SOURCE)
+    src = remove_bg(src, tolerance=60)
+    src = autocrop(src)
+    ball_h = int(H * 0.72)
+    scale  = ball_h / max(src.size)
+    ball   = src.resize((int(src.width * scale), int(src.height * scale)), Image.LANCZOS)
+    bx = W - ball.width - 60
+    by = (H - ball.height) // 2
+    canvas.paste(ball, (bx, by), ball)
+
+    # Title text on left  (drawn as simple white block since no font file needed)
+    try:
+        from PIL import ImageFont
+        font_title = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Bold.ttf', 80)
+        font_sub   = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial.ttf', 32)
+    except Exception:
+        font_title = ImageFont.load_default()
+        font_sub   = font_title
+
+    draw.text((60, 160), 'tuPachanga', font=font_title, fill=WHITE)
+    draw.text((62, 260), 'Organiza tus partidos de fútbol', font=font_sub, fill=(200, 255, 200))
+
+    canvas.save(path)
+    print(f'  Saved {path} (1024x500)')
+
+
 base = 'assets/images'
 print('Generating icons from icon_source.png...')
 make_icon(1024, f'{base}/icon.png',          padding_ratio=0.10)
 make_icon(1024, f'{base}/adaptive-icon.png', padding_ratio=0.18)
 make_icon(512,  f'{base}/splash-icon.png',   padding_ratio=0.10)
+make_feature_graphic(f'{base}/feature-graphic.png')
 print('Done!')

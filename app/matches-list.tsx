@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
@@ -16,11 +17,11 @@ import { useAuth } from '@/hooks/useAuth'
 import type { Match } from '@/types'
 import { formatDate } from '@/utils/date'
 
-const MATCH_EMOJIS: Record<string, string> = {
-  '5v5': '⚡',
-  '6v6': '🥅',
-  '7v7': '🏆',
-  '11v11': '🌟',
+const MATCH_ICONS: Record<string, string> = {
+  '5v5':   'soccer',
+  '6v6':   'whistle-outline',
+  '7v7':   'trophy-outline',
+  '11v11': 'soccer-field',
 }
 
 export default function MatchesListScreen() {
@@ -78,7 +79,7 @@ export default function MatchesListScreen() {
     >
       <View style={styles.matchLeft}>
         <View style={styles.matchEmoji}>
-          <Text style={styles.matchEmojiText}>{MATCH_EMOJIS[item.matchType] || '⚽'}</Text>
+          <MaterialCommunityIcons name={(MATCH_ICONS[item.matchType] ?? 'soccer') as any} size={26} color="#22C55E" />
         </View>
         <View>
           <Text style={styles.matchType}>{item.matchType.toUpperCase()} • {formatDate(item.date)}</Text>
@@ -88,7 +89,7 @@ export default function MatchesListScreen() {
           <View style={[styles.statusBadge, item.status === 'finished' && styles.statusBadgeFinished]}>
             <View style={[styles.statusDot, item.status === 'finished' && styles.statusDotFinished]} />
             <Text style={[styles.statusText, item.status === 'finished' && styles.statusTextFinished]}>
-              {item.status === 'finished' ? '✅ Finalizado' : 'Creado'}
+              {item.status === 'finished' ? 'Finalizado' : 'Creado'}
             </Text>
           </View>
           {item.status === 'finished' && item.scoreA !== undefined && item.scoreB !== undefined && (
@@ -125,7 +126,10 @@ export default function MatchesListScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="#4ADE80" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>📋 Mis Partidos</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="clipboard-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.headerTitle}>Mis Partidos</Text>
+          </View>
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => router.push('/create-match')}
@@ -136,7 +140,10 @@ export default function MatchesListScreen() {
 
         {isError && (
           <View style={{ backgroundColor: '#7F1D1D', margin: 12, borderRadius: 10, padding: 12 }}>
-            <Text style={{ color: '#FCA5A5', fontWeight: 'bold', marginBottom: 4 }}>⚠️ Error al cargar partidos</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Ionicons name="warning-outline" size={16} color="#FCA5A5" />
+              <Text style={{ color: '#FCA5A5', fontWeight: 'bold' }}>Error al cargar partidos</Text>
+            </View>
             <Text style={{ color: '#FCA5A5', fontSize: 12 }}>{(error as any)?.message ?? String(error)}</Text>
           </View>
         )}
@@ -149,7 +156,7 @@ export default function MatchesListScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🏟️</Text>
+              <MaterialCommunityIcons name="soccer-field" size={64} color="#4ADE80" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyText}>
                 {isLoading ? 'Cargando partidos...' : isError ? 'Error de conexión' : 'No hay partidos aún.\n¡Organiza uno!'}
               </Text>

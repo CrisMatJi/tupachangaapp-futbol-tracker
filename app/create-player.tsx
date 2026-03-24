@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -64,7 +65,7 @@ export default function CreatePlayerScreen() {
       })
       if (error) throw error
       await queryClient.invalidateQueries({ queryKey: ['players'] })
-      Alert.alert('¡Listo!', `${name.trim()} ha sido añadido al equipo. 🎉`, [
+      Alert.alert('¡Listo!', `${name.trim()} ha sido añadido al equipo.`, [
         { text: 'Crear otro', onPress: () => { setName(''); setSkill(3); setPosition(null) } },
         { text: 'Ir al menú', onPress: () => router.replace('/home') },
       ])
@@ -104,7 +105,7 @@ export default function CreatePlayerScreen() {
             {/* Avatar placeholder */}
             <View style={styles.avatarBlock}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarEmoji}>⚽</Text>
+                <MaterialCommunityIcons name="soccer" size={36} color="#22C55E" />
               </View>
               <Text style={styles.avatarHint}>Nuevo jugador</Text>
             </View>
@@ -143,11 +144,11 @@ export default function CreatePlayerScreen() {
               ))}
             </View>
             <Text style={styles.skillDesc}>
-              {skill === 1 && '⚽ Principiante — Apenas está aprendiendo'}
-              {skill === 2 && '⚽⚽ Amateur — Juega con ganas'}
-              {skill === 3 && '⚽⚽⚽ Regular — Buen nivel promedio'}
-              {skill === 4 && '⚽⚽⚽⚽ Bueno — Se le ve calidad'}
-              {skill === 5 && '⚽⚽⚽⚽⚽ Crack — ¡Nivel profesional!'}
+              {skill === 1 && 'Principiante · Apenas está aprendiendo'}
+              {skill === 2 && 'Amateur · Juega con ganas'}
+              {skill === 3 && 'Regular · Buen nivel promedio'}
+              {skill === 4 && 'Bueno · Se le ve calidad'}
+              {skill === 5 && 'Crack · ¡Nivel profesional!'}
             </Text>
 
             {/* Position */}
@@ -160,7 +161,12 @@ export default function CreatePlayerScreen() {
                   onPress={() => setPosition(pos.key)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.posEmoji}>{pos.emoji}</Text>
+                  <MaterialCommunityIcons
+                    name={pos.iconName as any}
+                    size={24}
+                    color={position === pos.key ? pos.color : '#9CA3AF'}
+                    style={{ marginBottom: 4 }}
+                  />
                   <Text style={[styles.posKey, position === pos.key && styles.posKeyActive]}>
                     {pos.key}
                   </Text>

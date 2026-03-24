@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
@@ -126,9 +127,11 @@ export default function PlayersListScreen() {
     return (
       <View style={styles.playerCard}>
         <View style={[styles.playerAvatar, pos && { borderColor: pos.color }]}>
-          <Text style={styles.playerAvatarText}>
-            {pos ? pos.emoji : '⚽'}
-          </Text>
+          <MaterialCommunityIcons
+            name={(pos ? pos.iconName : 'soccer') as any}
+            size={22}
+            color={pos ? pos.color : '#4ADE80'}
+          />
         </View>
         <View style={styles.playerInfo}>
           <Text style={styles.playerName}>{item.name}</Text>
@@ -166,7 +169,10 @@ export default function PlayersListScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="#4ADE80" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>👥 Mis Jugadores</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="people-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.headerTitle}>Mis Jugadores</Text>
+          </View>
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => router.push('/create-player')}
@@ -190,7 +196,10 @@ export default function PlayersListScreen() {
         {/* List */}
         {isError && (
           <View style={{ backgroundColor: '#7F1D1D', margin: 12, borderRadius: 10, padding: 12 }}>
-            <Text style={{ color: '#FCA5A5', fontWeight: 'bold', marginBottom: 4 }}>⚠️ Error al cargar jugadores</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Ionicons name="warning-outline" size={16} color="#FCA5A5" />
+              <Text style={{ color: '#FCA5A5', fontWeight: 'bold' }}>Error al cargar jugadores</Text>
+            </View>
             <Text style={{ color: '#FCA5A5', fontSize: 12 }}>{(error as any)?.message ?? String(error)}</Text>
           </View>
         )}
@@ -202,7 +211,7 @@ export default function PlayersListScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>⚽</Text>
+              <MaterialCommunityIcons name="soccer-field" size={56} color="#4ADE80" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyText}>
                 {isLoading ? 'Cargando jugadores...' : isError ? 'Error de conexión' : 'No hay jugadores aún.\n¡Crea el primero!'}
               </Text>
@@ -228,7 +237,10 @@ export default function PlayersListScreen() {
             >
               <View style={styles.modal}>
                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>✏️ Editar Jugador</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="create-outline" size={18} color="#4ADE80" />
+                    <Text style={styles.modalTitle}>Editar Jugador</Text>
+                  </View>
                   <TouchableOpacity onPress={() => setEditPlayer(null)}>
                     <Ionicons name="close" size={24} color="#C4C4C4" />
                   </TouchableOpacity>
@@ -267,7 +279,11 @@ export default function PlayersListScreen() {
                       style={[styles.posChip, editPosition === pos.key && { borderColor: pos.color, backgroundColor: `${pos.color}22` }]}
                       onPress={() => setEditPosition(pos.key)}
                     >
-                      <Text style={{ fontSize: 14 }}>{pos.emoji}</Text>
+                      <MaterialCommunityIcons
+                        name={pos.iconName as any}
+                        size={14}
+                        color={editPosition === pos.key ? pos.color : '#9CA3AF'}
+                      />
                       <Text style={[styles.posChipText, editPosition === pos.key && { color: pos.color }]}>{pos.key}</Text>
                     </TouchableOpacity>
                   ))}
@@ -279,7 +295,7 @@ export default function PlayersListScreen() {
                   disabled={updateMutation.isPending}
                 >
                   <Text style={styles.saveBtnText}>
-                    {updateMutation.isPending ? 'Guardando...' : '💾 Guardar cambios'}
+                    {updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
                   </Text>
                 </TouchableOpacity>
               </View>

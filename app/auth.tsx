@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import * as WebBrowser from 'expo-web-browser'
 import { makeRedirectUri } from 'expo-auth-session'
 import Constants from 'expo-constants'
@@ -170,7 +171,7 @@ export default function AuthScreen() {
           {/* Logo / Header */}
           <View style={styles.header}>
             <View style={styles.ballContainer}>
-              <Text style={styles.ballEmoji}>⚽</Text>
+              <MaterialCommunityIcons name="soccer" size={64} color="#22C55E" />
             </View>
             <Text style={styles.appTitle}>tuPachanga</Text>
             <Text style={styles.appSubtitle}>App</Text>
@@ -252,7 +253,7 @@ export default function AuthScreen() {
               <Text style={styles.btnText}>
                 {loading ? 'Cargando...' : mode === 'login' ? '¡Entrar al campo!' : '¡Crear cuenta!'}
               </Text>
-              {!loading && <Ionicons name="football-outline" size={20} color="#0F4C1E" style={styles.btnIcon} />}
+              {!loading && <MaterialCommunityIcons name="soccer" size={20} color="#0F4C1E" style={styles.btnIcon} />}
             </TouchableOpacity>
 
             {/* Divisor */}

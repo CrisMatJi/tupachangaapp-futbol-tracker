@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native'
 import { router } from 'expo-router'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function Index() {
@@ -72,9 +73,9 @@ export default function Index() {
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         {/* Ball */}
-        <Animated.Text style={[styles.ball, { transform: [{ translateY: ballBounce }] }]}>
-          ⚽
-        </Animated.Text>
+        <Animated.View style={{ transform: [{ translateY: ballBounce }] }}>
+          <MaterialCommunityIcons name="soccer" size={90} color="#22C55E" />
+        </Animated.View>
 
         {/* App name */}
         <Animated.View style={{ transform: [{ translateY: titleSlide }], opacity: fadeAnim }}>
@@ -96,9 +97,6 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     gap: 24,
-  },
-  ball: {
-    fontSize: 80,
   },
   title: {
     fontSize: 42,

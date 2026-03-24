@@ -9,14 +9,10 @@ import {
   Alert,
 } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
-
-const POSITIONS_INFO: Record<string, { emoji: string }> = {
-  POR: { emoji: '🧤' },
-  DEF: { emoji: '🛡️' },
-  MD:  { emoji: '🎯' },
-  AT:  { emoji: '⚡' },
-}
+import { POSITIONS_INFO } from '@/utils/positions'
 
 type PlayerEntry = {
   id: string
@@ -145,12 +141,12 @@ export default function VotePage() {
   if (notFound) {
     return (
       <View style={styles.center}>
-        <Text style={{ fontSize: 64 }}>🔒</Text>
+        <MaterialCommunityIcons name="lock-outline" size={64} color="#D1D5DB" style={{ marginBottom: 12 }} />
         <Text style={styles.doneTitle}>Votación no disponible</Text>
         <Text style={styles.doneSubtitle}>
           Este enlace no corresponde a ningún partido activo o la votación ya ha finalizado.
         </Text>
-        <Text style={styles.doneFooter}>🏆 tuPachanga</Text>
+        <Text style={styles.doneFooter}>tuPachanga</Text>
       </View>
     )
   }
@@ -158,7 +154,7 @@ export default function VotePage() {
   if (alreadyVoted || done) {
     return (
       <View style={styles.center}>
-        <Text style={{ fontSize: 64 }}>⭐</Text>
+        <MaterialCommunityIcons name="star-circle" size={64} color="#F59E0B" style={{ marginBottom: 12 }} />
         <Text style={styles.doneTitle}>¡Gracias por votar!</Text>
         {done && selectedPlayer && (
           <Text style={styles.doneSubtitle}>
@@ -169,7 +165,7 @@ export default function VotePage() {
         {alreadyVoted && !done && (
           <Text style={styles.doneSubtitle}>Ya has votado en este partido.</Text>
         )}
-        <Text style={styles.doneFooter}>🏆 tuPachanga</Text>
+        <Text style={styles.doneFooter}>tuPachanga</Text>
       </View>
     )
   }
@@ -178,7 +174,7 @@ export default function VotePage() {
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerBall}>⚽</Text>
+        <MaterialCommunityIcons name="soccer" size={48} color="#4ADE80" style={{ marginBottom: 8 }} />
         <Text style={styles.headerTitle}>tuPachanga</Text>
         <Text style={styles.headerSub}>Vota al MVP del partido</Text>
         {matchInfo && (
@@ -189,11 +185,11 @@ export default function VotePage() {
       </View>
 
       <Text style={styles.instruction}>
-        Elige el jugador que mejor lo hizo en este partido 👇
+        Elige el jugador que mejor lo hizo en este partido
       </Text>
 
       {/* Equipo A */}
-      <Text style={styles.teamLabelA}>🔴 EQUIPO A</Text>
+      <Text style={styles.teamLabelA}>EQUIPO A</Text>
       {teamA.map((p) => {
         const pos = POSITIONS_INFO[p.position ?? '']
         const isSelected = selectedId === p.id
@@ -204,7 +200,12 @@ export default function VotePage() {
             onPress={() => setSelectedId(isSelected ? null : p.id)}
             activeOpacity={0.8}
           >
-            <Text style={styles.playerEmoji}>{pos ? pos.emoji : '⚽'}</Text>
+            <MaterialCommunityIcons
+              name={(pos ? pos.iconName : 'soccer') as any}
+              size={22}
+              color={pos ? pos.color : '#4ADE80'}
+              style={{ marginRight: 8 }}
+            />
             <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
               {p.name}
             </Text>
@@ -214,7 +215,7 @@ export default function VotePage() {
       })}
 
       {/* Equipo B */}
-      <Text style={styles.teamLabelB}>🔵 EQUIPO B</Text>
+      <Text style={styles.teamLabelB}>EQUIPO B</Text>
       {teamB.map((p) => {
         const pos = POSITIONS_INFO[p.position ?? '']
         const isSelected = selectedId === p.id
@@ -225,7 +226,12 @@ export default function VotePage() {
             onPress={() => setSelectedId(isSelected ? null : p.id)}
             activeOpacity={0.8}
           >
-            <Text style={styles.playerEmoji}>{pos ? pos.emoji : '⚽'}</Text>
+            <MaterialCommunityIcons
+              name={(pos ? pos.iconName : 'soccer') as any}
+              size={22}
+              color={pos ? pos.color : '#4ADE80'}
+              style={{ marginRight: 8 }}
+            />
             <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
               {p.name}
             </Text>
@@ -245,12 +251,12 @@ export default function VotePage() {
           {submitting
             ? 'Enviando...'
             : selectedId
-            ? `⭐ Votar por ${selectedPlayer?.name}`
+            ? `Votar por ${selectedPlayer?.name}`
             : 'Selecciona un jugador'}
         </Text>
       </TouchableOpacity>
 
-      <Text style={styles.footer}>🏆 Organizado con tuPachanga</Text>
+      <Text style={styles.footer}>Organizado con tuPachanga</Text>
     </ScrollView>
   )
 }

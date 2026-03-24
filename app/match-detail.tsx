@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
@@ -160,7 +161,7 @@ export default function MatchDetailScreen() {
               if (error) throw error
               queryClient.invalidateQueries({ queryKey: ['match', matchId] })
               queryClient.invalidateQueries({ queryKey: ['matches'] })
-              Alert.alert('¡Partido finalizado!', '🏆 El resultado ha sido guardado.')
+              Alert.alert('¡Partido finalizado!', 'El resultado ha sido guardado.')
             } catch (err: any) {
               console.error('[match-detail] Error finalizando partido:', JSON.stringify(err, null, 2))
               Alert.alert('Error', err?.message || 'No se pudo finalizar el partido.')
@@ -207,10 +208,10 @@ export default function MatchDetailScreen() {
 
   const formatLineup = (): string => {
     const teamAText = localTeamA
-      .map(p => `  ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`)
+      .map(p => `  [${p.position ?? '?'}] ${p.name}`)
       .join('\n')
     const teamBText = localTeamB
-      .map(p => `  ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`)
+      .map(p => `  [${p.position ?? '?'}] ${p.name}`)
       .join('\n')
     const dateStr = match ? formatDate(match.date) : ''
     const type = match?.matchType?.toUpperCase() ?? ''
@@ -239,10 +240,10 @@ export default function MatchDetailScreen() {
     const dateStr = match ? formatDate(match.date) : ''
     const type = match?.matchType?.toUpperCase() ?? ''
     const teamALines = localTeamA.map((p, i) =>
-      `${NUMBER_EMOJIS[i]} ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`
+      `${NUMBER_EMOJIS[i]} [${p.position ?? '?'}] ${p.name}`
     ).join('\n')
     const teamBLines = localTeamB.map((p, i) =>
-      `${NUMBER_EMOJIS[localTeamA.length + i]} ${getPositionInfo(p.position)?.emoji ?? '⚽'} ${p.name}`
+      `${NUMBER_EMOJIS[localTeamA.length + i]} [${p.position ?? '?'}] ${p.name}`
     ).join('\n')
     return `⭐ *Vota al MVP de la pachanga*\n📅 ${dateStr}  ·  ${type}\n\nResponde con el número de tu jugador favorito 👇\n\n🔴 *EQUIPO A:*\n${teamALines}\n\n🔵 *EQUIPO B:*\n${teamBLines}\n\n⏰ ${deadlineStr}\n🏆 Organizado con tuPachanga`
   }
@@ -263,7 +264,7 @@ export default function MatchDetailScreen() {
     const inTwoH = new Date(now.getTime() + 2 * 60 * 60 * 1000)
     const tonight = new Date(now); tonight.setHours(22, 0, 0, 0)
     const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(12, 0, 0, 0)
-    Alert.alert('⭐ Abrir votación MVP', '¿Cuándo cierra la votación?', [
+    Alert.alert('Abrir votación MVP', '¿Cuándo cierra la votación?', [
       { text: `En 2h  (${fmt(inTwoH)})`, onPress: () => doShareVote(`Votación abierta hasta el ${fmt(inTwoH)}`) },
       { text: `Esta noche  (${fmt(tonight)})`, onPress: () => doShareVote(`Votación abierta hasta el ${fmt(tonight)}`) },
       { text: `Mañana mediodía  (${fmt(tomorrow)})`, onPress: () => doShareVote(`Votación abierta hasta el ${fmt(tomorrow)}`) },
@@ -304,7 +305,7 @@ export default function MatchDetailScreen() {
 
       queryClient.invalidateQueries({ queryKey: ['matchPlayers', matchId] })
       queryClient.invalidateQueries({ queryKey: ['matches'] })
-      Alert.alert('¡Guardado!', 'El partido ha sido actualizado. 🎉')
+      Alert.alert('¡Guardado!', 'El partido ha sido actualizado.')
     } catch (err: any) {
       console.error('[match-detail] Error guardando cambios:', JSON.stringify(err, null, 2))
       Alert.alert('Error', err?.message || 'No se pudo guardar los cambios.')
@@ -351,14 +352,22 @@ export default function MatchDetailScreen() {
           {/* Team A */}
           <View style={[styles.teamCard, styles.teamCardA]}>
             <View style={styles.teamHeader}>
-              <Text style={styles.teamHeaderText}>🔴 EQUIPO A</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' }} />
+                <Text style={styles.teamHeaderText}>EQUIPO A</Text>
+              </View>
               <Text style={styles.teamAvg}>Media: {avgSkill(localTeamA)}</Text>
             </View>
             {localTeamA.map((p) => {
               const pos = p.position ? POSITIONS_INFO[p.position] : null
               return (
                 <View key={p.id} style={styles.playerRow}>
-                  <Text style={{ fontSize: 18, marginRight: 10 }}>{pos ? pos.emoji : '⚽'}</Text>
+                  <MaterialCommunityIcons
+                    name={(pos ? pos.iconName : 'soccer') as any}
+                    size={18}
+                    color={pos ? pos.color : '#4ADE80'}
+                    style={{ marginRight: 10 }}
+                  />
                   <Text style={styles.playerName}>{p.name}</Text>
                   <View style={{ flexDirection: 'row', gap: 1 }}>
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -382,14 +391,22 @@ export default function MatchDetailScreen() {
           {/* Team B */}
           <View style={[styles.teamCard, styles.teamCardB]}>
             <View style={styles.teamHeader}>
-              <Text style={styles.teamHeaderText}>🔵 EQUIPO B</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#3B82F6' }} />
+                <Text style={styles.teamHeaderText}>EQUIPO B</Text>
+              </View>
               <Text style={styles.teamAvg}>Media: {avgSkill(localTeamB)}</Text>
             </View>
             {localTeamB.map((p) => {
               const pos = p.position ? POSITIONS_INFO[p.position] : null
               return (
                 <View key={p.id} style={styles.playerRow}>
-                  <Text style={{ fontSize: 18, marginRight: 10 }}>{pos ? pos.emoji : '⚽'}</Text>
+                  <MaterialCommunityIcons
+                    name={(pos ? pos.iconName : 'soccer') as any}
+                    size={18}
+                    color={pos ? pos.color : '#4ADE80'}
+                    style={{ marginRight: 10 }}
+                  />
                   <Text style={styles.playerName}>{p.name}</Text>
                   <View style={{ flexDirection: 'row', gap: 1 }}>
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -423,7 +440,7 @@ export default function MatchDetailScreen() {
             >
               <Ionicons name="checkmark-circle-outline" size={22} color="#0A3A17" />
               <Text style={styles.saveBtnText}>
-                {saving ? 'Guardando...' : '💾 Guardar cambios'}
+                {saving ? 'Guardando...' : 'Guardar cambios'}
               </Text>
             </TouchableOpacity>
           )}
@@ -431,53 +448,49 @@ export default function MatchDetailScreen() {
           {/* ── Resultado y MVP ── */}
           {match.status === 'finished' ? (
             <View style={styles.resultBanner}>
-              <Text style={styles.resultTitle}>🏆 Resultado final</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+                <Ionicons name="trophy" size={15} color="#22C55E" />
+                <Text style={[styles.resultTitle, { marginBottom: 0 }]}>Resultado final</Text>
+              </View>
 
               {/* Marcador */}
               <View style={styles.resultScoreRow}>
-                <Text style={styles.resultTeamLabel}>🔴 A</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' }} />
+                  <Text style={styles.resultTeamLabel}>A</Text>
+                </View>
                 <Text style={styles.resultScoreNum}>{match.scoreA ?? '–'}</Text>
                 <Text style={styles.resultColon}>:</Text>
                 <Text style={styles.resultScoreNum}>{match.scoreB ?? '–'}</Text>
-                <Text style={[styles.resultTeamLabel, { color: '#3B82F6' }]}>🔵 B</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6' }} />
+                  <Text style={[styles.resultTeamLabel, { color: '#3B82F6' }]}>B</Text>
+                </View>
               </View>
 
               {/* Equipos en dos columnas */}
               <View style={styles.resultTeamsRow}>
                 <View style={styles.resultTeamCol}>
-                  <Text style={styles.resultTeamColHeader}>🔴 Equipo A</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 8 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' }} />
+                    <Text style={[styles.resultTeamColHeader, { marginBottom: 0 }]}>Equipo A</Text>
+                  </View>
                   {localTeamA.map((p) => {
                     const isMvp = match.mvpPlayerId === p.id
                     const pos = p.position ? POSITIONS_INFO[p.position] : null
                     return (
                       <View key={p.id} style={styles.resultPlayerRow}>
-                        <Text style={styles.resultPlayerEmoji}>{pos?.emoji ?? '⚽'}</Text>
+                        <MaterialCommunityIcons
+                          name={(pos?.iconName ?? 'soccer') as any}
+                          size={14}
+                          color={pos?.color ?? '#4ADE80'}
+                          style={{ marginRight: 5 }}
+                        />
                         <Text
                           style={[styles.resultPlayerName, isMvp && styles.resultPlayerMvp]}
                           numberOfLines={1}
                         >
-                          {p.name}{isMvp ? ' ⭐' : ''}
-                        </Text>
-                      </View>
-                    )
-                  })}
-                </View>
-
-                <View style={styles.resultDividerV} />
-
-                <View style={styles.resultTeamCol}>
-                  <Text style={[styles.resultTeamColHeader, { color: '#3B82F6' }]}>🔵 Equipo B</Text>
-                  {localTeamB.map((p) => {
-                    const isMvp = match.mvpPlayerId === p.id
-                    const pos = p.position ? POSITIONS_INFO[p.position] : null
-                    return (
-                      <View key={p.id} style={styles.resultPlayerRow}>
-                        <Text style={styles.resultPlayerEmoji}>{pos?.emoji ?? '⚽'}</Text>
-                        <Text
-                          style={[styles.resultPlayerName, isMvp && styles.resultPlayerMvp]}
-                          numberOfLines={1}
-                        >
-                          {p.name}{isMvp ? ' ⭐' : ''}
+                          {p.name}{isMvp ? ' ★' : ''}
                         </Text>
                       </View>
                     )
@@ -491,9 +504,12 @@ export default function MatchDetailScreen() {
                 const pos = mvp?.position ? POSITIONS_INFO[mvp.position] : null
                 return (
                   <View style={styles.mvpResultBanner}>
-                    <Text style={styles.mvpResultBannerEmoji}>{pos?.emoji ?? '⚽'}</Text>
+                    <MaterialCommunityIcons name={(pos?.iconName ?? 'soccer') as any} size={30} color={pos?.color ?? '#4ADE80'} />
                     <View>
-                      <Text style={styles.mvpResultBannerLabel}>⭐ MVP del partido</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="star" size={11} color="#F59E0B" />
+                        <Text style={styles.mvpResultBannerLabel}>MVP del partido</Text>
+                      </View>
                       <Text style={styles.mvpResultBannerName}>{mvp?.name ?? '–'}</Text>
                     </View>
                   </View>
@@ -517,19 +533,25 @@ export default function MatchDetailScreen() {
             </View>
           ) : (
             <View style={styles.finishSection}>
-              <Text style={styles.finishSectionTitle}>🏁 Finalizar partido</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Ionicons name="flag-outline" size={16} color="#FFFFFF" />
+                <Text style={[styles.finishSectionTitle, { marginBottom: 0 }]}>Finalizar partido</Text>
+              </View>
 
               {/* Votar MVP */}
               <TouchableOpacity style={styles.voteBtn} onPress={handleShareVote} activeOpacity={0.85}>
                 <Ionicons name="star-outline" size={18} color="#0A3A17" />
-                <Text style={styles.voteBtnText}>⭐ Abrir votación MVP</Text>
+                <Text style={styles.voteBtnText}>Abrir votación MVP</Text>
               </TouchableOpacity>
 
               {/* Marcador */}
               <Text style={styles.finishLabel}>RESULTADO</Text>
               <View style={styles.scoreRow}>
                 <View style={styles.scoreBox}>
-                  <Text style={styles.scoreTeamLabel}>🔴 Equipo A</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' }} />
+                    <Text style={[styles.scoreTeamLabel, { marginBottom: 0 }]}>Equipo A</Text>
+                  </View>
                   <View style={styles.scoreControls}>
                     <TouchableOpacity onPress={() => setScoreA(Math.max(0, scoreA - 1))} style={styles.scoreBtn}>
                       <Text style={styles.scoreBtnText}>−</Text>
@@ -544,7 +566,10 @@ export default function MatchDetailScreen() {
                   <Text style={styles.scoreSeparatorText}>:</Text>
                 </View>
                 <View style={styles.scoreBox}>
-                  <Text style={[styles.scoreTeamLabel, { color: '#3B82F6' }]}>🔵 Equipo B</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6' }} />
+                    <Text style={[styles.scoreTeamLabel, { color: '#3B82F6', marginBottom: 0 }]}>Equipo B</Text>
+                  </View>
                   <View style={styles.scoreControls}>
                     <TouchableOpacity onPress={() => setScoreB(Math.max(0, scoreB - 1))} style={styles.scoreBtn}>
                       <Text style={styles.scoreBtnText}>−</Text>
@@ -558,16 +583,22 @@ export default function MatchDetailScreen() {
               </View>
 
               {/* MVP */}
-              <Text style={styles.finishLabel}>MVP DEL PARTIDO ⭐</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                <Ionicons name="star" size={12} color="#F59E0B" />
+                <Text style={[styles.finishLabel, { marginBottom: 0 }]}>MVP DEL PARTIDO</Text>
+              </View>
               {totalVotes > 0 && topVotedId && (
                 <View style={styles.voteHint}>
-                  <Text style={styles.voteHintText}>
-                    📊 {totalVotes} {totalVotes === 1 ? 'voto' : 'votos'} · lidera{' '}
-                    <Text style={styles.voteHintName}>
-                      {allPlayers.find(p => p.id === topVotedId)?.name ?? '...'}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <Ionicons name="bar-chart-outline" size={13} color="#D1D5DB" />
+                    <Text style={styles.voteHintText}>
+                      {totalVotes} {totalVotes === 1 ? 'voto' : 'votos'} · lidera{' '}
+                      <Text style={styles.voteHintName}>
+                        {allPlayers.find(p => p.id === topVotedId)?.name ?? '...'}
+                      </Text>
+                      {' '}({voteCounts[topVotedId]})
                     </Text>
-                    {' '}({voteCounts[topVotedId]})
-                  </Text>
+                  </View>
                 </View>
               )}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mvpScroll} contentContainerStyle={{ paddingRight: 16 }}>
@@ -583,7 +614,12 @@ export default function MatchDetailScreen() {
                       onPress={() => setMvpPlayerId(isSelected ? null : p.id)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.mvpEmoji}>{pos ? pos.emoji : '⚽'}</Text>
+                      <MaterialCommunityIcons
+                        name={(pos ? pos.iconName : 'soccer') as any}
+                        size={22}
+                        color={pos ? pos.color : '#4ADE80'}
+                        style={{ marginBottom: 4 }}
+                      />
                       <Text style={[styles.mvpName, isSelected && styles.mvpNameActive, isTopVoted && !isSelected && { color: '#A78BFA' }]} numberOfLines={1}>
                         {p.name}
                       </Text>
@@ -592,7 +628,7 @@ export default function MatchDetailScreen() {
                           <Text style={styles.mvpVoteBadgeText}>{voteCount}★</Text>
                         </View>
                       )}
-                      {isSelected && !voteCount && <Text style={styles.mvpStar}>⭐</Text>}
+                      {isSelected && !voteCount && <MaterialCommunityIcons name="star" size={14} color="#F59E0B" style={{ marginTop: 2 }} />}
                     </TouchableOpacity>
                   )
                 })}
@@ -605,7 +641,7 @@ export default function MatchDetailScreen() {
                 activeOpacity={0.85}
               >
                 <Ionicons name="trophy-outline" size={20} color="#0A3A17" />
-                <Text style={styles.finishBtnText}>{saving ? 'Guardando...' : '✅ Finalizar partido'}</Text>
+                <Text style={styles.finishBtnText}>{saving ? 'Guardando...' : 'Finalizar partido'}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -616,7 +652,10 @@ export default function MatchDetailScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modal}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>✏️ Modificar resultado</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="create-outline" size={18} color="#4ADE80" />
+                  <Text style={styles.modalTitle}>Modificar resultado</Text>
+                </View>
                 <TouchableOpacity onPress={() => setShowEditResult(false)}>
                   <Ionicons name="close" size={24} color="#C4C4C4" />
                 </TouchableOpacity>
@@ -626,7 +665,10 @@ export default function MatchDetailScreen() {
               <Text style={styles.finishLabel}>RESULTADO</Text>
               <View style={styles.scoreRow}>
                 <View style={styles.scoreBox}>
-                  <Text style={styles.scoreTeamLabel}>🔴 Equipo A</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' }} />
+                    <Text style={[styles.scoreTeamLabel, { marginBottom: 0 }]}>Equipo A</Text>
+                  </View>
                   <View style={styles.scoreControls}>
                     <TouchableOpacity onPress={() => setScoreA(Math.max(0, scoreA - 1))} style={styles.scoreBtn}>
                       <Text style={styles.scoreBtnText}>−</Text>
@@ -641,7 +683,10 @@ export default function MatchDetailScreen() {
                   <Text style={styles.scoreSeparatorText}>:</Text>
                 </View>
                 <View style={styles.scoreBox}>
-                  <Text style={[styles.scoreTeamLabel, { color: '#3B82F6' }]}>🔵 Equipo B</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6' }} />
+                    <Text style={[styles.scoreTeamLabel, { color: '#3B82F6', marginBottom: 0 }]}>Equipo B</Text>
+                  </View>
                   <View style={styles.scoreControls}>
                     <TouchableOpacity onPress={() => setScoreB(Math.max(0, scoreB - 1))} style={styles.scoreBtn}>
                       <Text style={styles.scoreBtnText}>−</Text>
@@ -655,7 +700,10 @@ export default function MatchDetailScreen() {
               </View>
 
               {/* MVP */}
-              <Text style={[styles.finishLabel, { marginTop: 8 }]}>MVP DEL PARTIDO ⭐</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, marginBottom: 10 }}>
+                <Ionicons name="star" size={12} color="#F59E0B" />
+                <Text style={[styles.finishLabel, { marginBottom: 0 }]}>MVP DEL PARTIDO</Text>
+              </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mvpScroll} contentContainerStyle={{ paddingRight: 16 }}>
                 {[...localTeamA, ...localTeamB].map((p) => {
                   const isSelected = mvpPlayerId === p.id
@@ -667,11 +715,16 @@ export default function MatchDetailScreen() {
                       onPress={() => setMvpPlayerId(isSelected ? null : p.id)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.mvpEmoji}>{pos ? pos.emoji : '⚽'}</Text>
+                      <MaterialCommunityIcons
+                        name={(pos ? pos.iconName : 'soccer') as any}
+                        size={22}
+                        color={pos ? pos.color : '#4ADE80'}
+                        style={{ marginBottom: 4 }}
+                      />
                       <Text style={[styles.mvpName, isSelected && styles.mvpNameActive]} numberOfLines={1}>
                         {p.name}
                       </Text>
-                      {isSelected && <Text style={styles.mvpStar}>⭐</Text>}
+                      {isSelected && <MaterialCommunityIcons name="star" size={14} color="#F59E0B" style={{ marginTop: 2 }} />}
                     </TouchableOpacity>
                   )
                 })}
@@ -699,7 +752,7 @@ export default function MatchDetailScreen() {
                 }}
                 disabled={saving}
               >
-                <Text style={styles.applyBtnText}>{saving ? 'Guardando...' : '✅ Guardar cambios'}</Text>
+                <Text style={styles.applyBtnText}>{saving ? 'Guardando...' : 'Guardar cambios'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -710,7 +763,10 @@ export default function MatchDetailScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modal}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>👥 Cambiar jugadores</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="people-outline" size={18} color="#4ADE80" />
+                  <Text style={styles.modalTitle}>Cambiar jugadores</Text>
+                </View>
                 <TouchableOpacity onPress={() => setShowPlayerPicker(false)}>
                   <Ionicons name="close" size={24} color="#C4C4C4" />
                 </TouchableOpacity>
@@ -731,7 +787,12 @@ export default function MatchDetailScreen() {
                       <View style={[styles.playerCheck, isSelected && styles.playerCheckActive]}>
                         {isSelected && <Ionicons name="checkmark" size={12} color="#FFF" />}
                       </View>
-                      <Text style={{ fontSize: 18, marginRight: 8 }}>{pos ? pos.emoji : '⚽'}</Text>
+                      <MaterialCommunityIcons
+                        name={(pos ? pos.iconName : 'soccer') as any}
+                        size={18}
+                        color={pos ? pos.color : '#4ADE80'}
+                        style={{ marginRight: 8 }}
+                      />
                       <Text style={[styles.modalPlayerName, isSelected && { color: '#4ADE80' }]}>
                         {player.name}
                       </Text>

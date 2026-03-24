@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -17,8 +18,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
 interface MenuItemProps {
-  icon: any
-  emoji: string
+  icon: string
   title: string
   subtitle: string
   color: string
@@ -26,7 +26,7 @@ interface MenuItemProps {
   onPress: () => void
 }
 
-function MenuItem({ icon, emoji, title, subtitle, color, bgColor, onPress }: MenuItemProps) {
+function MenuItem({ icon, title, subtitle, color, bgColor, onPress }: MenuItemProps) {
   return (
     <TouchableOpacity
       style={styles.menuItem}
@@ -34,7 +34,7 @@ function MenuItem({ icon, emoji, title, subtitle, color, bgColor, onPress }: Men
       activeOpacity={0.82}
     >
       <View style={[styles.menuIcon, { backgroundColor: bgColor }]}>
-        <Text style={styles.menuEmoji}>{emoji}</Text>
+        <MaterialCommunityIcons name={icon as any} size={26} color={color} />
       </View>
       <View style={styles.menuText}>
         <Text style={styles.menuTitle}>{title}</Text>
@@ -98,14 +98,21 @@ export default function HomeScreen() {
 
         {/* Title */}
         <View style={styles.titleBlock}>
-          <Text style={styles.appTitle}>⚽ tuPachanga</Text>
+          <View style={styles.titleRow}>
+            <MaterialCommunityIcons name="soccer" size={30} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.appTitle}>tuPachanga</Text>
+          </View>
           <Text style={styles.appSubtitle}>App</Text>
           <View style={styles.titleDecor} />
         </View>
 
         {/* Grass strip */}
         <View style={styles.grassStrip}>
-          <Text style={styles.grassText}>🏟️  EL CAMPO TE ESPERA  🏟️</Text>
+          <View style={styles.grassInner}>
+            <MaterialCommunityIcons name="soccer" size={13} color="#4ADE80" />
+            <Text style={styles.grassText}>  EL CAMPO TE ESPERA  </Text>
+            <MaterialCommunityIcons name="soccer" size={13} color="#4ADE80" />
+          </View>
         </View>
 
         {/* Menu */}
@@ -115,8 +122,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <MenuItem
-            emoji="⭐"
-            icon="person-add-outline"
+            icon="account-plus-outline"
             title="Crear Jugador"
             subtitle="Añade un nuevo crack al equipo"
             color="#F59E0B"
@@ -124,8 +130,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/create-player')}
           />
           <MenuItem
-            emoji="🏆"
-            icon="football-outline"
+            icon="soccer"
             title="Crear Partido"
             subtitle="Organiza una nueva pachanga"
             color="#22C55E"
@@ -133,8 +138,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/create-match')}
           />
           <MenuItem
-            emoji="📋"
-            icon="list-outline"
+            icon="clipboard-list-outline"
             title="Partidos Existentes"
             subtitle="Ver y editar partidos anteriores"
             color="#3B82F6"
@@ -142,8 +146,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/matches-list')}
           />
           <MenuItem
-            emoji="👥"
-            icon="people-outline"
+            icon="account-group-outline"
             title="Listado de Jugadores"
             subtitle="Gestiona tus jugadores disponibles"
             color="#A78BFA"
@@ -158,7 +161,7 @@ export default function HomeScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.promoEmoji}>🏆</Text>
+            <MaterialCommunityIcons name="trophy" size={32} color="#22C55E" />
             <View style={{ flex: 1 }}>
               <Text style={styles.promoTitle}>Organiza partidos perfectos</Text>
               <Text style={styles.promoSub}>Equipos equilibrados automáticamente por posición y nivel</Text>
@@ -196,6 +199,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   titleBlock: { alignItems: 'center', paddingTop: 8, paddingBottom: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
   appTitle: { fontSize: 32, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 },
   appSubtitle: {
     fontSize: 22,
@@ -217,6 +221,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     borderRadius: 8,
     paddingVertical: 8,
+    alignItems: 'center',
+  },
+  grassInner: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   grassText: {
