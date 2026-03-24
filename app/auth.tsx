@@ -53,12 +53,12 @@ export default function AuthScreen() {
       }
 
       // Nativo (iOS/Android): usar WebBrowser in-app
-      // En Expo Go el scheme 'blinkexpo://' NO está registrado → iOS no sabe a qué app volver.
-      // En Expo Go usamos exp://localhost:8081 (que Expo Go sí maneja y está en el allowlist de Supabase).
-      // En builds reales (standalone/dev build) usamos el scheme registrado en app.json.
+      // storeClient = Expo Go, standalone/bare = build real
       const isExpoGo = Constants.executionEnvironment === 'storeClient'
       const redirectUrl = makeRedirectUri(
-        isExpoGo ? { preferLocalhost: true } : { native: 'tupachangaapp://' }
+        isExpoGo
+          ? { preferLocalhost: true }
+          : { scheme: 'tupachangaapp', path: 'auth' }
       )
 
       const { data, error } = await supabase.auth.signInWithOAuth({

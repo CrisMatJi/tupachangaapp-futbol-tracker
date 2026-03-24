@@ -25,7 +25,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.tupachangaapp"
+      "package": "com.tupachangaapp",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -46,7 +47,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "c9183ecb-9637-4b9e-b95a-d89f38721bdd"
       }
     }
   }
