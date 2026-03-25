@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>tuPachanga – Screenshot 2 – Equipos Equilibrados</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: #071220;
+    }
+
+    .bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, #1E3A5F 0%, transparent 60%),
+        radial-gradient(ellipse 70% 60% at 85% 100%, #163B27 0%, transparent 65%),
+        linear-gradient(175deg, #071220 0%, #0C1B2E 50%, #071220 100%);
+    }
+    .bg::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      top: -150px; right: -150px;
+      background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);
+    }
+    .bg::after {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      bottom: -150px; left: -150px;
+      background: radial-gradient(circle, rgba(239,68,68,0.08) 0%, transparent 70%);
+    }
+
+    .canvas {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      width: 100%;
+      text-align: center;
+      padding: 90px 80px 0;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(59,130,246,0.15);
+      border: 1.5px solid rgba(59,130,246,0.4);
+      border-radius: 100px;
+      padding: 12px 36px;
+      margin-bottom: 32px;
+    }
+    .step-badge span {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #60A5FA;
+    }
+
+    .headline {
+      font-size: 88px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      text-shadow: 0 4px 40px rgba(0,0,0,0.5);
+    }
+    .headline em { font-style: normal; color: #4ADE80; }
+
+    .sub {
+      margin-top: 24px;
+      font-size: 36px;
+      font-weight: 500;
+      color: #CBD5E1;
+      line-height: 1.45;
+    }
+
+    /* ── PHONE ── */
+    .phone-wrap {
+      position: relative;
+      margin-top: 56px;
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .phone-frame {
+      position: relative;
+      width: 500px;
+      height: 1010px;
+      background: #0A1628;
+      border-radius: 64px;
+      border: 10px solid #1F2937;
+      box-shadow:
+        0 0 0 3px rgba(255,255,255,0.07),
+        0 40px 110px rgba(0,0,0,0.8),
+        inset 0 0 0 2px rgba(255,255,255,0.04);
+      overflow: hidden;
+    }
+    .dynamic-island {
+      position: absolute;
+      top: 16px; left: 50%;
+      transform: translateX(-50%);
+      width: 130px; height: 34px;
+      background: #000;
+      border-radius: 22px;
+      z-index: 10;
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 70px 22px 22px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Screen content: match config */
+    .screen-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .screen-subtitle {
+      font-size: 18px;
+      color: #6B7280;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* Step indicator */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .step-dot {
+      width: 36px; height: 8px;
+      border-radius: 4px;
+      background: #1F2937;
+    }
+    .step-dot.active { background: #22C55E; }
+    .step-dot.done { background: rgba(34,197,94,0.4); }
+
+    /* Team cards */
+    .teams-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .team-card {
+      flex: 1;
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .team-card.team-a {
+      background: rgba(239,68,68,0.12);
+      border: 1.5px solid rgba(239,68,68,0.35);
+    }
+    .team-card.team-b {
+      background: rgba(59,130,246,0.12);
+      border: 1.5px solid rgba(59,130,246,0.35);
+    }
+    .team-label {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .team-card.team-a .team-label { color: #EF4444; }
+    .team-card.team-b .team-label { color: #3B82F6; }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .player-row:last-child { border-bottom: none; }
+    .player-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .pa-red { background: #EF4444; }
+    .pa-blue { background: #3B82F6; }
+    .player-info { flex: 1; }
+    .player-name { font-size: 14px; font-weight: 600; color: #fff; }
+    .player-pos {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 1px;
+    }
+    .player-skill {
+      display: flex;
+      gap: 2px;
+    }
+    .star { color: #F59E0B; font-size: 10px; }
+    .star.off { color: #374151; }
+
+    /* Balance indicator */
+    .balance-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    .balance-icon { font-size: 24px; }
+    .balance-text { font-size: 16px; font-weight: 700; color: #4ADE80; }
+    .balance-sub { font-size: 13px; color: #6B7280; margin-top: 2px; }
+
+    .btn-create {
+      margin-top: auto;
+      background: linear-gradient(135deg, #16A34A, #22C55E);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 8px 32px rgba(34,197,94,0.4);
+    }
+
+    /* ── BOTTOM: VS visual ── */
+    .vs-strip {
+      width: 100%;
+      padding: 40px 70px 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+    .team-pill {
+      flex: 1;
+      border-radius: 20px;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .team-pill.red {
+      background: rgba(239,68,68,0.15);
+      border: 2px solid rgba(239,68,68,0.5);
+    }
+    .team-pill.blue {
+      background: rgba(59,130,246,0.15);
+      border: 2px solid rgba(59,130,246,0.5);
+    }
+    .pill-label { font-size: 52px; font-weight: 900; }
+    .pill-label.red-text { color: #EF4444; }
+    .pill-label.blue-text { color: #3B82F6; }
+    .pill-sub { font-size: 20px; font-weight: 600; color: #9CA3AF; margin-top: 8px; }
+
+    .vs-center {
+      font-size: 60px;
+      font-weight: 900;
+      color: #1F2937;
+      background: #fff;
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="canvas">
+
+    <div class="header">
+      <div class="step-badge">
+        <span>Equipos Inteligentes</span>
+      </div>
+      <div class="headline">Equilibrio<br>automático <em>garantizado</em></div>
+      <div class="sub">El algoritmo reparte jugadores<br>por posición y nivel de habilidad</div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone-frame">
+        <div class="dynamic-island"></div>
+        <div class="screen">
+
+          <div class="screen-title">⚽ Nuevo Partido</div>
+          <div class="screen-subtitle">Paso 3 de 3 — Asignar equipos</div>
+
+          <div class="steps">
+            <div class="step-dot done"></div>
+            <div class="step-dot done"></div>
+            <div class="step-dot active"></div>
+          </div>
+
+          <div class="balance-row">
+            <div class="balance-icon">⚖️</div>
+            <div>
+              <div class="balance-text">Equipos equilibrados automáticamente</div>
+              <div class="balance-sub">Diferencia de nivel: 0.4 pts · 5v5</div>
+            </div>
+          </div>
+
+          <div class="teams-row">
+            <!-- Equipo A -->
+            <div class="team-card team-a">
+              <div class="team-label">🔴 Equipo A</div>
+              <div class="player-row">
+                <div class="player-avatar pa-red">JM</div>
+                <div class="player-info">
+                  <div class="player-name">Juan M.</div>
+                  <div class="player-pos">Portero</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span>
+                </div>
+              </div>
+              <div class="player-row">
+                <div class="player-avatar pa-red">CR</div>
+                <div class="player-info">
+                  <div class="player-name">Carlos R.</div>
+                  <div class="player-pos">Defensa</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span>
+                </div>
+              </div>
+              <div class="player-row">
+                <div class="player-avatar pa-red">LP</div>
+                <div class="player-info">
+                  <div class="player-name">Luis P.</div>
+                  <div class="player-pos">Mediocampista</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+                </div>
+              </div>
+              <div class="player-row">
+                <div class="player-avatar pa-red">MG</div>
+                <div class="player-info">
+                  <div class="player-name">Miguel G.</div>
+                  <div class="player-pos">Atacante</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Equipo B -->
+            <div class="team-card team-b">
+              <div class="team-label">🔵 Equipo B</div>
+              <div class="player-row">
+                <div class="player-avatar pa-blue">AR</div>
+                <div class="player-info">
+                  <div class="player-name">Andrés R.</div>
+                  <div class="player-pos">Portero</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span>
+                </div>
+              </div>
+              <div class="player-row">
+                <div class="player-avatar pa-blue">DM</div>
+                <div class="player-info">
+                  <div class="player-name">Diego M.</div>
+                  <div class="player-pos">Defensa</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span>
+                </div>
+              </div>
+              <div class="player-row">
+                <div class="player-avatar pa-blue">SV</div>
+                <div class="player-info">
+                  <div class="player-name">Sergio V.</div>
+                  <div class="player-pos">Mediocampista</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span>
+                </div>
+              </div>
+              <div class="player-row">
+                <div class="player-avatar pa-blue">PA</div>
+                <div class="player-info">
+                  <div class="player-name">Pablo A.</div>
+                  <div class="player-pos">Atacante</div>
+                </div>
+                <div class="player-skill">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-create">Crear Partido ✓</div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- VS STRIP -->
+    <div class="vs-strip">
+      <div class="team-pill red">
+        <div class="pill-label red-text">A</div>
+        <div class="pill-sub">Nivel ⌀ 3.8</div>
+      </div>
+      <div class="vs-center">VS</div>
+      <div class="team-pill blue">
+        <div class="pill-label blue-text">B</div>
+        <div class="pill-sub">Nivel ⌀ 3.7</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

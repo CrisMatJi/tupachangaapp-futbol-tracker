@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>tuPachanga – Screenshot 4 – Players</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1080px; height: 1920px; overflow: hidden;
+      font-family: 'Inter', sans-serif; background: #071220;
+    }
+
+    .bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 75% 50% at 0% 0%, #1B2F1A 0%, transparent 55%),
+        radial-gradient(ellipse 70% 55% at 100% 100%, #1E3A5F 0%, transparent 60%),
+        linear-gradient(170deg, #071220 0%, #0A1628 100%);
+    }
+
+    .canvas {
+      position: relative; width: 1080px; height: 1920px;
+      display: flex; flex-direction: column; align-items: center; z-index: 1;
+    }
+
+    /* HEADER */
+    .header {
+      width: 100%; text-align: center; padding: 90px 80px 0;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: rgba(139,92,246,0.15); border: 1.5px solid rgba(139,92,246,0.4);
+      border-radius: 100px; padding: 12px 36px; margin-bottom: 32px;
+    }
+    .badge span { font-size: 26px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #A78BFA; }
+    .headline { font-size: 86px; font-weight: 900; color: #fff; letter-spacing: -2px; line-height: 1.05; }
+    .headline em { font-style: normal; color: #4ADE80; }
+    .sub { margin-top: 24px; font-size: 36px; font-weight: 500; color: #CBD5E1; line-height: 1.4; }
+
+    /* PHONE */
+    .phone-wrap {
+      position: relative; margin-top: 52px; flex: 1;
+      display: flex; align-items: flex-start; justify-content: center;
+    }
+    .phone-frame {
+      position: relative; width: 500px; height: 1010px;
+      background: #0A1628; border-radius: 64px;
+      border: 10px solid #1F2937;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.07), 0 40px 110px rgba(0,0,0,0.8);
+      overflow: hidden;
+    }
+    .dynamic-island {
+      position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      width: 130px; height: 34px; background: #000; border-radius: 22px; z-index: 10;
+    }
+    .screen {
+      position: absolute; inset: 0; padding: 68px 20px 20px;
+      display: flex; flex-direction: column;
+    }
+
+    /* Screen content */
+    .s-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .s-title { font-size: 26px; font-weight: 800; color: #fff; }
+    .s-count {
+      background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 10px; padding: 6px 14px;
+      font-size: 16px; font-weight: 700; color: #4ADE80;
+    }
+
+    /* Search bar */
+    .search-bar {
+      display: flex; align-items: center; gap: 10px;
+      background: #111D2E; border: 1px solid #1F2937;
+      border-radius: 14px; padding: 12px 16px; margin-bottom: 16px;
+    }
+    .search-icon { font-size: 18px; }
+    .search-text { font-size: 16px; color: #6B7280; }
+
+    /* Player card */
+    .player-card {
+      display: flex; align-items: center;
+      background: #111D2E; border-radius: 16px;
+      padding: 14px 16px; margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+      gap: 14px;
+    }
+    .pc-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .pc-info { flex: 1; }
+    .pc-name { font-size: 18px; font-weight: 700; color: #fff; }
+    .pc-pos-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .pos-badge {
+      font-size: 12px; font-weight: 600; padding: 3px 10px;
+      border-radius: 6px; color: #fff;
+    }
+    .pos-por { background: rgba(245,158,11,0.25); color: #F59E0B; }
+    .pos-def { background: rgba(59,130,246,0.25); color: #3B82F6; }
+    .pos-mid { background: rgba(139,92,246,0.25); color: #8B5CF6; }
+    .pos-fwd { background: rgba(239,68,68,0.25); color: #EF4444; }
+
+    .pc-stars { display: flex; gap: 2px; }
+    .star { color: #F59E0B; font-size: 12px; }
+    .star.off { color: #374151; }
+
+    .pc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .edit-btn {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: #6B7280;
+    }
+
+    .add-btn {
+      margin-top: auto;
+      background: linear-gradient(135deg, #16A34A, #22C55E);
+      border-radius: 16px; padding: 18px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      font-size: 20px; font-weight: 800; color: #fff;
+      box-shadow: 0 8px 28px rgba(34,197,94,0.4);
+    }
+
+    /* BOTTOM */
+    .bottom-strip {
+      width: 100%; padding: 40px 70px 50px;
+      display: flex; justify-content: space-around; align-items: center; gap: 20px;
+    }
+    .stat {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .stat-num { font-size: 72px; font-weight: 900; color: #4ADE80; line-height: 1; }
+    .stat-label { font-size: 22px; font-weight: 600; color: #9CA3AF; text-align: center; }
+
+    .stat-divider {
+      width: 2px; height: 80px;
+      background: rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="canvas">
+
+    <div class="header">
+      <div class="badge"><span>Gestión de Jugadores</span></div>
+      <div class="headline">Tu plantilla,<br>siempre <em>lista</em></div>
+      <div class="sub">Añade, edita y gestiona todos<br>tus jugadores en un solo lugar</div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone-frame">
+        <div class="dynamic-island"></div>
+        <div class="screen">
+
+          <div class="s-header">
+            <div class="s-title">Jugadores</div>
+            <div class="s-count">12 jugadores</div>
+          </div>
+
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <span class="search-text">Buscar jugador...</span>
+          </div>
+
+          <div class="player-card">
+            <div class="pc-avatar" style="background:#F59E0B">JM</div>
+            <div class="pc-info">
+              <div class="pc-name">Juan Martínez</div>
+              <div class="pc-pos-row">
+                <span class="pos-badge pos-por">POR</span>
+                <div class="pc-stars">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span>
+                </div>
+              </div>
+            </div>
+            <div class="pc-right"><div class="edit-btn">✎</div></div>
+          </div>
+
+          <div class="player-card">
+            <div class="pc-avatar" style="background:#3B82F6">CR</div>
+            <div class="pc-info">
+              <div class="pc-name">Carlos Rodríguez</div>
+              <div class="pc-pos-row">
+                <span class="pos-badge pos-def">DEF</span>
+                <div class="pc-stars">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span>
+                </div>
+              </div>
+            </div>
+            <div class="pc-right"><div class="edit-btn">✎</div></div>
+          </div>
+
+          <div class="player-card">
+            <div class="pc-avatar" style="background:#8B5CF6">LP</div>
+            <div class="pc-info">
+              <div class="pc-name">Luis Pérez</div>
+              <div class="pc-pos-row">
+                <span class="pos-badge pos-mid">MD</span>
+                <div class="pc-stars">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+                </div>
+              </div>
+            </div>
+            <div class="pc-right"><div class="edit-btn">✎</div></div>
+          </div>
+
+          <div class="player-card">
+            <div class="pc-avatar" style="background:#EF4444">MG</div>
+            <div class="pc-info">
+              <div class="pc-name">Miguel González</div>
+              <div class="pc-pos-row">
+                <span class="pos-badge pos-fwd">AT</span>
+                <div class="pc-stars">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span>
+                </div>
+              </div>
+            </div>
+            <div class="pc-right"><div class="edit-btn">✎</div></div>
+          </div>
+
+          <div class="player-card">
+            <div class="pc-avatar" style="background:#22C55E">SP</div>
+            <div class="pc-info">
+              <div class="pc-name">Sergio Palacios</div>
+              <div class="pc-pos-row">
+                <span class="pos-badge pos-mid">MD</span>
+                <div class="pc-stars">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span>
+                </div>
+              </div>
+            </div>
+            <div class="pc-right"><div class="edit-btn">✎</div></div>
+          </div>
+
+          <div class="player-card">
+            <div class="pc-avatar" style="background:#F97316">RA</div>
+            <div class="pc-info">
+              <div class="pc-name">Roberto Álvarez</div>
+              <div class="pc-pos-row">
+                <span class="pos-badge pos-fwd">AT</span>
+                <div class="pc-stars">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+                </div>
+              </div>
+            </div>
+            <div class="pc-right"><div class="edit-btn">✎</div></div>
+          </div>
+
+          <div class="add-btn">+ Añadir jugador</div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS STRIP -->
+    <div class="bottom-strip">
+      <div class="stat">
+        <div class="stat-num">4</div>
+        <div class="stat-label">Posiciones</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num">5</div>
+        <div class="stat-label">Niveles<br>de habilidad</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num">∞</div>
+        <div class="stat-label">Jugadores<br>sin límite</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

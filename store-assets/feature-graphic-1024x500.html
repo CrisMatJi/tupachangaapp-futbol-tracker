@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>tuPachanga – Feature Graphic 1024×500</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1024px; height: 500px; overflow: hidden;
+      font-family: 'Inter', sans-serif; background: #071220;
+    }
+
+    .bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 65% 90% at 0% 50%, #0B3D1F 0%, transparent 60%),
+        radial-gradient(ellipse 60% 100% at 105% 50%, #0E2040 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 50% -20%, rgba(34,197,94,0.25) 0%, transparent 65%),
+        linear-gradient(135deg, #071220 0%, #0A1E14 50%, #071220 100%);
+    }
+
+    /* Decorative circles */
+    .circle1 {
+      position: absolute; width: 380px; height: 380px; border-radius: 50%;
+      border: 1px solid rgba(34,197,94,0.08);
+      top: 50%; left: 5%; transform: translateY(-50%);
+    }
+    .circle2 {
+      position: absolute; width: 260px; height: 260px; border-radius: 50%;
+      border: 1px solid rgba(34,197,94,0.12);
+      top: 50%; left: 5%; transform: translateY(-50%);
+    }
+    .circle3 {
+      position: absolute; width: 500px; height: 500px; border-radius: 50%;
+      border: 1px solid rgba(59,130,246,0.06);
+      top: 50%; right: -80px; transform: translateY(-50%);
+    }
+
+    /* Grid dots pattern */
+    .dots {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(34,197,94,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .canvas {
+      position: relative; width: 1024px; height: 500px;
+      display: flex; align-items: center; z-index: 1;
+      padding: 0 60px;
+      gap: 50px;
+    }
+
+    /* LEFT: text */
+    .left {
+      flex: 1;
+      display: flex; flex-direction: column;
+    }
+
+    .logo-row {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 16px;
+    }
+    .ball { font-size: 52px; filter: drop-shadow(0 4px 16px rgba(34,197,94,0.4)); }
+    .logo-text {
+      font-size: 58px; font-weight: 900; color: #fff;
+      letter-spacing: -1.5px; line-height: 1;
+    }
+    .logo-text em { font-style: normal; color: #4ADE80; }
+
+    .tagline {
+      font-size: 22px; font-weight: 600; color: #D1FAE5;
+      letter-spacing: 0.3px; margin-bottom: 28px;
+      opacity: 0.85;
+    }
+
+    /* feature pills */
+    .pills {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 100px; padding: 8px 18px 8px 10px;
+      width: fit-content;
+    }
+    .pill-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .pd-green { background: rgba(34,197,94,0.25); }
+    .pd-blue  { background: rgba(59,130,246,0.25); }
+    .pd-yellow{ background: rgba(245,158,11,0.25); }
+    .pill-text { font-size: 16px; font-weight: 600; color: #E5E7EB; }
+
+    /* RIGHT: mini phone */
+    .right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .mini-phone {
+      width: 170px; height: 340px;
+      background: #0A1628;
+      border-radius: 28px;
+      border: 5px solid #1F2937;
+      box-shadow: 0 0 0 1.5px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.7);
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .mini-phone.accent {
+      border-color: rgba(34,197,94,0.3);
+      transform: scale(1.08);
+      box-shadow: 0 0 0 1.5px rgba(34,197,94,0.2), 0 24px 70px rgba(0,0,0,0.7), 0 0 40px rgba(34,197,94,0.15);
+    }
+    .di {
+      position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+      width: 48px; height: 12px; background: #000; border-radius: 8px; z-index: 5;
+    }
+    .mini-screen {
+      position: absolute; inset: 0;
+      padding: 28px 10px 10px;
+      display: flex; flex-direction: column;
+      background: linear-gradient(180deg, #0A1628, #0E1F32);
+    }
+
+    /* mini screen A: home */
+    .ms-title { font-size: 10px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 10px; }
+    .ms-menu-item {
+      display: flex; align-items: center; gap: 6px;
+      background: #111D2E; border-radius: 8px; padding: 7px 8px; margin-bottom: 5px;
+    }
+    .ms-icon { width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; }
+    .ms-label { font-size: 8px; font-weight: 600; color: #fff; }
+
+    /* mini screen B: teams */
+    .ms-teams { display: flex; gap: 5px; flex: 1; }
+    .ms-team {
+      flex: 1; border-radius: 8px; padding: 8px 6px;
+    }
+    .ms-team.a { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); }
+    .ms-team.b { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); }
+    .ms-team-label { font-size: 8px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .ms-team.a .ms-team-label { color: #EF4444; }
+    .ms-team.b .ms-team-label { color: #3B82F6; }
+    .ms-player {
+      display: flex; align-items: center; gap: 4px;
+      margin-bottom: 4px;
+    }
+    .ms-av {
+      width: 14px; height: 14px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 5px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .ms-pname { font-size: 7px; color: #9CA3AF; }
+
+    /* mini screen C: MVP */
+    .ms-vote-title { font-size: 9px; font-weight: 800; color: #FCD34D; text-align: center; margin-bottom: 8px; }
+    .ms-vcard {
+      display: flex; align-items: center; gap: 5px;
+      background: #111D2E; border-radius: 6px; padding: 5px 6px; margin-bottom: 4px;
+    }
+    .ms-vcard.winner {
+      background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.35);
+    }
+    .ms-vav { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+    .ms-vname { font-size: 7px; font-weight: 600; color: #fff; flex: 1; }
+    .ms-vcount { font-size: 9px; font-weight: 700; color: #F59E0B; }
+
+    /* divider */
+    .v-divider {
+      width: 1px; height: 180px; background: rgba(255,255,255,0.08);
+      align-self: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="circle1"></div>
+  <div class="circle2"></div>
+  <div class="circle3"></div>
+  <div class="dots"></div>
+
+  <div class="canvas">
+
+    <!-- LEFT TEXT -->
+    <div class="left">
+      <div class="logo-row">
+        <div class="ball">⚽</div>
+        <div class="logo-text">tu<em>Pachanga</em></div>
+      </div>
+
+      <div class="tagline">Organiza pachangas de fútbol como un pro</div>
+
+      <div class="pills">
+        <div class="pill">
+          <div class="pill-dot pd-green">⚽</div>
+          <div class="pill-text">Crea partidos en segundos</div>
+        </div>
+        <div class="pill">
+          <div class="pill-dot pd-blue">⚖️</div>
+          <div class="pill-text">Equipos equilibrados automáticamente</div>
+        </div>
+        <div class="pill">
+          <div class="pill-dot pd-yellow">🏆</div>
+          <div class="pill-text">Vota al MVP de la pachanga</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="v-divider"></div>
+
+    <!-- RIGHT: 3 mini phones -->
+    <div class="right">
+
+      <!-- Phone 1: Home -->
+      <div class="mini-phone">
+        <div class="di"></div>
+        <div class="mini-screen">
+          <div class="ms-title">⚽ tuPachanga</div>
+          <div class="ms-menu-item">
+            <div class="ms-icon" style="background:rgba(245,158,11,0.3)"></div>
+            <div class="ms-label">Crear Jugador</div>
+          </div>
+          <div class="ms-menu-item">
+            <div class="ms-icon" style="background:rgba(34,197,94,0.3)"></div>
+            <div class="ms-label">Crear Partido</div>
+          </div>
+          <div class="ms-menu-item">
+            <div class="ms-icon" style="background:rgba(59,130,246,0.3)"></div>
+            <div class="ms-label">Partidos</div>
+          </div>
+          <div class="ms-menu-item">
+            <div class="ms-icon" style="background:rgba(139,92,246,0.3)"></div>
+            <div class="ms-label">Jugadores</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone 2: Teams (center, bigger) -->
+      <div class="mini-phone accent">
+        <div class="di"></div>
+        <div class="mini-screen">
+          <div style="font-size:8px;font-weight:800;color:#4ADE80;text-align:center;margin-bottom:8px">Equipos ⚖️</div>
+          <div class="ms-teams">
+            <div class="ms-team a">
+              <div class="ms-team-label">🔴 A</div>
+              <div class="ms-player"><div class="ms-av" style="background:#EF4444">JM</div><div class="ms-pname">Juan M.</div></div>
+              <div class="ms-player"><div class="ms-av" style="background:#EF4444">CR</div><div class="ms-pname">Carlos R.</div></div>
+              <div class="ms-player"><div class="ms-av" style="background:#EF4444">LP</div><div class="ms-pname">Luis P.</div></div>
+              <div class="ms-player"><div class="ms-av" style="background:#EF4444">MG</div><div class="ms-pname">Miguel G.</div></div>
+            </div>
+            <div class="ms-team b">
+              <div class="ms-team-label">🔵 B</div>
+              <div class="ms-player"><div class="ms-av" style="background:#3B82F6">AR</div><div class="ms-pname">Andrés R.</div></div>
+              <div class="ms-player"><div class="ms-av" style="background:#3B82F6">DM</div><div class="ms-pname">Diego M.</div></div>
+              <div class="ms-player"><div class="ms-av" style="background:#3B82F6">SV</div><div class="ms-pname">Sergio V.</div></div>
+              <div class="ms-player"><div class="ms-av" style="background:#3B82F6">PA</div><div class="ms-pname">Pablo A.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone 3: MVP -->
+      <div class="mini-phone">
+        <div class="di"></div>
+        <div class="mini-screen">
+          <div class="ms-vote-title">🏆 MVP</div>
+          <div class="ms-vcard winner">
+            <div class="ms-vav" style="background:#F59E0B"></div>
+            <div class="ms-vname">Luis P. 👑</div>
+            <div class="ms-vcount">4</div>
+          </div>
+          <div class="ms-vcard">
+            <div class="ms-vav" style="background:#EF4444"></div>
+            <div class="ms-vname">Miguel G.</div>
+            <div class="ms-vcount" style="color:#6B7280">2</div>
+          </div>
+          <div class="ms-vcard">
+            <div class="ms-vav" style="background:#3B82F6"></div>
+            <div class="ms-vname">Pablo A.</div>
+            <div class="ms-vcount" style="color:#6B7280">1</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
