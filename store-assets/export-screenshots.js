@@ -22,31 +22,31 @@ const PAGES = [
   {
     file: 'screenshot-1-home.html',
     out:  'screenshot-1-home.png',
-    w: 1080, h: 1920,
+    w: 1080, h: 1920, dpr: 2,
     desc: 'Pantalla Principal',
   },
   {
     file: 'screenshot-2-teams.html',
     out:  'screenshot-2-teams.png',
-    w: 1080, h: 1920,
+    w: 1080, h: 1920, dpr: 2,
     desc: 'Equipos Equilibrados',
   },
   {
     file: 'screenshot-3-mvp.html',
     out:  'screenshot-3-mvp.png',
-    w: 1080, h: 1920,
+    w: 1080, h: 1920, dpr: 2,
     desc: 'Votación MVP',
   },
   {
     file: 'screenshot-4-players.html',
     out:  'screenshot-4-players.png',
-    w: 1080, h: 1920,
+    w: 1080, h: 1920, dpr: 2,
     desc: 'Listado de Jugadores',
   },
   {
     file: 'feature-graphic-1024x500.html',
     out:  'feature-graphic-1024x500.png',
-    w: 1024, h: 500,
+    w: 1024, h: 500, dpr: 1,   // Play Store exige exactamente 1024×500
     desc: 'Feature Graphic (Play Store)',
   },
 ];
@@ -65,8 +65,8 @@ const PAGES = [
 
     const page = await browser.newPage();
 
-    // Establecer resolución de pantalla exacta (deviceScaleFactor=2 para retina)
-    await page.setViewport({ width: p.w, height: p.h, deviceScaleFactor: 2 });
+    // Establecer resolución de pantalla exacta
+    await page.setViewport({ width: p.w, height: p.h, deviceScaleFactor: p.dpr });
 
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
 

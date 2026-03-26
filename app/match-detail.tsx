@@ -254,7 +254,7 @@ export default function MatchDetailScreen() {
     const dateStr = match ? formatDate(match.date) : ''
     const type = match?.matchType?.toUpperCase() ?? ''
     const message = `⭐ *Vota al MVP de la pachanga*\n📅 ${dateStr} · ${type}\n\nAbre este enlace y elige tu MVP 👇\n${voteUrl}\n\n⏰ ${deadlineStr}\n🏆 tuPachanga`
-    try { await Share.share({ message, url: voteUrl }) } catch {}
+    try { await Share.share({ message }) } catch {}
   }
 
   const handleShareVote = () => {

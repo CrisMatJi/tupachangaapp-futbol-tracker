@@ -80,10 +80,37 @@ export default function PlayersListScreen() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Comprobar si el jugador está vinculado a algún partido
+      const { data: linked, error: checkError } = await supabase
+        .from('match_players')
+        .select('match_id, matches(date, match_type)')
+        .eq('player_id', id)
+        .limit(3)
+      if (checkError) throw checkError
+
+      if (linked && linked.length > 0) {
+        const matchLines = linked
+          .map((row: any) => {
+            const m = row.matches
+            if (!m) return '• Partido desconocido'
+            const [y, mo, d] = (m.date as string).split('-')
+            const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+            const fecha = `${d} ${MONTHS[parseInt(mo, 10) - 1]} ${y}`
+            return `• ${m.match_type} — ${fecha}`
+          })
+          .join('\n')
+        const extra = linked.length > 3 ? `\n…y ${linked.length - 3} más` : ''
+        throw new Error(
+          `Este jugador participa en ${linked.length} partido${linked.length > 1 ? 's' : ''}:\n\n${matchLines}${extra}\n\nElimina primero esos partidos y después podrás borrar al jugador.`
+        )
+      }
+
       const { error } = await supabase.from('players').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['players'] }),
+    onError: (err: any) =>
+      Alert.alert('No se puede eliminar', err?.message ?? 'Error desconocido.'),
   })
 
   const openEdit = (player: Player) => {

@@ -77,7 +77,7 @@ export default function HomeScreen() {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/background-menu.jpeg')}
+      source={require('@/assets/images/background-partidos.jpg')}
       style={styles.root}
       resizeMode="cover"
     >
