@@ -20,6 +20,7 @@ import Constants from 'expo-constants'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { FieldLines } from '@/components/FootballBackground'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -171,7 +172,7 @@ export default function AuthScreen() {
           {/* Logo / Header */}
           <View style={styles.header}>
             <View style={styles.ballContainer}>
-              <MaterialCommunityIcons name="soccer" size={64} color="#22C55E" />
+              <MaterialCommunityIcons name="soccer" size={64} color={colors.accent.primary} />
             </View>
             <Text style={styles.appTitle}>tuPachanga</Text>
             <Text style={styles.appSubtitle}>App</Text>
@@ -202,11 +203,11 @@ export default function AuthScreen() {
 
             {/* Fields */}
             <View style={styles.field}>
-              <Ionicons name="mail-outline" size={18} color="#4ADE80" style={styles.fieldIcon} />
+              <Ionicons name="mail-outline" size={18} color={colors.accent.light} style={styles.fieldIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Correo electrónico"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.muted}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -216,11 +217,11 @@ export default function AuthScreen() {
             </View>
 
             <View style={styles.field}>
-              <Ionicons name="lock-closed-outline" size={18} color="#4ADE80" style={styles.fieldIcon} />
+              <Ionicons name="lock-closed-outline" size={18} color={colors.accent.light} style={styles.fieldIcon} />
               <TextInput
                 style={[styles.input, styles.inputFlex]}
                 placeholder="Contraseña"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.muted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -232,11 +233,11 @@ export default function AuthScreen() {
 
             {mode === 'register' && (
               <View style={styles.field}>
-                <Ionicons name="lock-closed-outline" size={18} color="#4ADE80" style={styles.fieldIcon} />
+                <Ionicons name="lock-closed-outline" size={18} color={colors.accent.light} style={styles.fieldIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Confirmar contraseña"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.text.muted}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showPassword}
@@ -289,7 +290,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   flex: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.xxl,
+    width: '100%',
+    maxWidth: layout.maxWidthForm,
+    alignSelf: 'center',
+  },
   header: { alignItems: 'center', marginBottom: 32 },
   ballContainer: {
     width: 80,
@@ -298,41 +306,41 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   ballEmoji: { fontSize: 40 },
   appTitle: {
     fontSize: 36,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -1,
   },
   appSubtitle: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#4ADE80',
+    color: colors.accent.light,
     letterSpacing: -0.5,
     marginTop: -6,
   },
   tagline: {
-    fontSize: 14,
+    fontSize: fontSize.md,
     color: 'rgba(255,255,255,0.85)',
     marginTop: 6,
     letterSpacing: 0.5,
   },
   card: {
     backgroundColor: '#1A1A2E',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: radius.xxl,
+    padding: spacing.xxl,
     borderWidth: 1,
     borderColor: 'rgba(74,222,128,0.2)',
   },
   toggle: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 4,
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   toggleBtn: {
     flex: 1,
@@ -340,26 +348,26 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  toggleActive: { backgroundColor: '#16A34A' },
-  toggleText: { fontSize: 14, fontWeight: '600', color: '#D1D5DB' },
-  toggleTextActive: { color: '#FFFFFF' },
+  toggleActive: { backgroundColor: colors.accent.dark },
+  toggleText: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.secondary },
+  toggleTextActive: { color: colors.text.primary },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.15)',
-    paddingHorizontal: 12,
+    borderColor: colors.accent.border,
+    paddingHorizontal: spacing.md,
   },
   fieldIcon: { marginRight: 10 },
-  input: { flex: 1, height: 50, color: '#FFFFFF', fontSize: 15 },
+  input: { flex: 1, height: 50, color: colors.text.primary, fontSize: fontSize.lg },
   inputFlex: { flex: 1 },
   eyeBtn: { padding: 8 },
   btn: {
-    backgroundColor: '#22C55E',
-    borderRadius: 14,
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.lg,
     height: 54,
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,12 +375,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   btnDisabled: { opacity: 0.6 },
-  btnText: { fontSize: 16, fontWeight: '800', color: '#0F4C1E', letterSpacing: 0.3 },
+  btnText: { fontSize: fontSize.xl, fontWeight: '800', color: '#0F4C1E', letterSpacing: 0.3 },
   btnIcon: { marginLeft: 8 },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: spacing.lg,
   },
   dividerLine: {
     flex: 1,
@@ -380,13 +388,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
   dividerText: {
-    color: '#9CA3AF',
-    fontSize: 12,
+    color: colors.text.muted,
+    fontSize: fontSize.sm,
     marginHorizontal: 10,
   },
   googleBtn: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: colors.text.primary,
+    borderRadius: radius.lg,
     height: 54,
     flexDirection: 'row',
     alignItems: 'center',
@@ -394,12 +402,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   googleG: {
-    fontSize: 20,
+    fontSize: fontSize.xxl,
     fontWeight: '800',
     color: '#4285F4',
   },
   googleText: {
-    fontSize: 15,
+    fontSize: fontSize.lg,
     fontWeight: '700',
     color: '#1F1F1F',
   },

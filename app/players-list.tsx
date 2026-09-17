@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type { Player, Position } from '@/types'
 import { POSITIONS } from '@/utils/positions'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
 
 const posInfo = (pos?: string) => POSITIONS.find((p) => p.key === pos)
 
@@ -28,7 +29,7 @@ function StarRating({ value, size = 14 }: { value: number; size?: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <Text key={i} style={{ fontSize: size, color: i <= value ? '#F59E0B' : '#374151' }}>
+        <Text key={i} style={{ fontSize: size, color: i <= value ? colors.star.active : colors.star.inactive }}>
           ★
         </Text>
       ))}
@@ -157,7 +158,7 @@ export default function PlayersListScreen() {
           <MaterialCommunityIcons
             name={(pos ? pos.iconName : 'soccer') as any}
             size={22}
-            color={pos ? pos.color : '#4ADE80'}
+            color={pos ? pos.color : colors.accent.light}
           />
         </View>
         <View style={styles.playerInfo}>
@@ -173,10 +174,10 @@ export default function PlayersListScreen() {
         </View>
         <View style={styles.playerActions}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => openEdit(item)}>
-            <Ionicons name="create-outline" size={18} color="#4ADE80" />
+            <Ionicons name="create-outline" size={18} color={colors.accent.light} />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={() => handleDelete(item)}>
-            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            <Ionicons name="trash-outline" size={18} color={colors.status.danger} />
           </TouchableOpacity>
         </View>
       </View>
@@ -194,27 +195,27 @@ export default function PlayersListScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color="#4ADE80" />
+            <Ionicons name="arrow-back" size={22} color={colors.accent.light} />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Ionicons name="people-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="people-outline" size={18} color={colors.text.primary} />
             <Text style={styles.headerTitle}>Mis Jugadores</Text>
           </View>
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => router.push('/create-player')}
           >
-            <Ionicons name="add" size={22} color="#0A3A17" />
+            <Ionicons name="add" size={22} color={colors.text.inverse} />
           </TouchableOpacity>
         </View>
 
         {/* Search */}
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={16} color={colors.text.muted} style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar jugador..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.text.muted}
             value={search}
             onChangeText={setSearch}
           />
@@ -238,7 +239,7 @@ export default function PlayersListScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <MaterialCommunityIcons name="soccer-field" size={56} color="#4ADE80" style={{ marginBottom: 12 }} />
+              <MaterialCommunityIcons name="soccer-field" size={56} color={colors.accent.light} style={{ marginBottom: 12 }} />
               <Text style={styles.emptyText}>
                 {isLoading ? 'Cargando jugadores...' : isError ? 'Error de conexión' : 'No hay jugadores aún.\n¡Crea el primero!'}
               </Text>
@@ -265,7 +266,7 @@ export default function PlayersListScreen() {
               <View style={styles.modal}>
                 <View style={styles.modalHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="create-outline" size={18} color="#4ADE80" />
+                    <Ionicons name="create-outline" size={18} color={colors.accent.light} />
                     <Text style={styles.modalTitle}>Editar Jugador</Text>
                   </View>
                   <TouchableOpacity onPress={() => setEditPlayer(null)}>
@@ -280,7 +281,7 @@ export default function PlayersListScreen() {
                     value={editName}
                     onChangeText={setEditName}
                     placeholder="Nombre"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.text.muted}
                   />
                 </View>
 
@@ -309,7 +310,7 @@ export default function PlayersListScreen() {
                       <MaterialCommunityIcons
                         name={pos.iconName as any}
                         size={14}
-                        color={editPosition === pos.key ? pos.color : '#9CA3AF'}
+                        color={editPosition === pos.key ? pos.color : colors.text.muted}
                       />
                       <Text style={[styles.posChipText, editPosition === pos.key && { color: pos.color }]}>{pos.key}</Text>
                     </TouchableOpacity>
@@ -338,79 +339,85 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,58,23,0.80)',
+    backgroundColor: colors.bg.overlay,
   },
   safe: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(74,222,128,0.1)',
+    borderBottomColor: colors.accent.muted,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: colors.accent.muted,
     justifyContent: 'center', alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+  headerTitle: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.text.primary },
   addBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#22C55E',
+    backgroundColor: colors.accent.primary,
     justifyContent: 'center', alignItems: 'center',
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111827',
-    margin: 16,
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: colors.bg.card,
+    margin: spacing.lg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: colors.border.subtle,
   },
-  searchInput: { flex: 1, height: 44, color: '#FFFFFF', fontSize: 14 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  searchInput: { flex: 1, height: 44, color: colors.text.primary, fontSize: fontSize.md },
+  list: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
+    width: '100%',
+    maxWidth: layout.maxWidthContent,
+    alignSelf: 'center',
+  },
   playerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111827',
-    borderRadius: 14,
+    backgroundColor: colors.bg.card,
+    borderRadius: radius.lg,
     marginBottom: 10,
-    padding: 12,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: colors.border.subtle,
   },
   playerAvatar: {
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: '#166534',
+    backgroundColor: colors.bg.deeper,
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: '#22C55E',
-    marginRight: 12,
+    borderWidth: 2, borderColor: colors.accent.primary,
+    marginRight: spacing.md,
   },
   playerAvatarText: { fontSize: 22 },
   playerInfo: { flex: 1 },
-  playerName: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 4 },
+  playerName: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text.primary, marginBottom: 4 },
   playerMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   posBadge: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
-  posBadgeText: { fontSize: 11, fontWeight: '700' },
+  posBadgeText: { fontSize: fontSize.sm, fontWeight: '700' },
   playerActions: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: colors.accent.muted,
     justifyContent: 'center', alignItems: 'center',
   },
   deleteBtn: { backgroundColor: 'rgba(239,68,68,0.1)' },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: '#D1D5DB', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  emptyText: { color: colors.text.secondary, fontSize: fontSize.lg, textAlign: 'center', lineHeight: 22 },
   emptyBtn: {
-    marginTop: 16, backgroundColor: '#22C55E',
-    borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,
+    marginTop: spacing.lg, backgroundColor: colors.accent.primary,
+    borderRadius: radius.md, paddingHorizontal: spacing.xxl, paddingVertical: spacing.md,
   },
-  emptyBtnText: { color: '#0A3A17', fontWeight: '700' },
+  emptyBtnText: { color: colors.text.inverse, fontWeight: '700' },
   // Modal
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
@@ -418,43 +425,43 @@ const styles = StyleSheet.create({
   },
   modalWrap: { justifyContent: 'flex-end' },
   modal: {
-    backgroundColor: '#111827',
+    backgroundColor: colors.bg.card,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24, paddingBottom: 36,
-    borderTopWidth: 1, borderColor: 'rgba(74,222,128,0.15)',
+    padding: spacing.xxl, paddingBottom: 36,
+    borderTopWidth: 1, borderColor: colors.accent.border,
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  label: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.75)', marginBottom: 8, textTransform: 'uppercase' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xxl },
+  modalTitle: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.text.primary },
+  label: { fontSize: fontSize.base, fontWeight: '700', color: 'rgba(255,255,255,0.75)', marginBottom: spacing.sm, textTransform: 'uppercase' },
   field: {
-    backgroundColor: '#1A1A2E', borderRadius: 12,
-    borderWidth: 1, borderColor: 'rgba(74,222,128,0.15)',
-    paddingHorizontal: 14, marginBottom: 16,
+    backgroundColor: '#1A1A2E', borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.accent.border,
+    paddingHorizontal: 14, marginBottom: spacing.lg,
   },
-  fieldInput: { height: 46, color: '#FFFFFF', fontSize: 15 },
-  skillRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  fieldInput: { height: 46, color: colors.text.primary, fontSize: fontSize.lg },
+  skillRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.lg },
   skillBtn: {
     flex: 1, backgroundColor: '#1A1A2E', borderRadius: 10,
     paddingVertical: 10, alignItems: 'center',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1.5, borderColor: colors.border.subtle,
   },
-  skillBtnActive: { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.12)' },
-  skillStar: { fontSize: 20, color: '#D1D5DB' },
-  skillStarActive: { color: '#F59E0B' },
-  skillLabel2: { fontSize: 11, fontWeight: '700', color: '#D1D5DB', marginTop: 2 },
-  skillLabelActive: { color: '#F59E0B' },
-  posRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  skillBtnActive: { borderColor: colors.star.active, backgroundColor: 'rgba(245,158,11,0.12)' },
+  skillStar: { fontSize: 20, color: colors.text.secondary },
+  skillStarActive: { color: colors.star.active },
+  skillLabel2: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text.secondary, marginTop: 2 },
+  skillLabelActive: { color: colors.star.active },
+  posRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.xxl },
   posChip: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
     backgroundColor: '#1A1A2E', borderRadius: 10,
     paddingVertical: 10, paddingHorizontal: 4,
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1.5, borderColor: colors.border.subtle,
   },
-  posChipText: { fontSize: 13, fontWeight: '700', color: '#D1D5DB' },
+  posChipText: { fontSize: fontSize.base, fontWeight: '700', color: colors.text.secondary },
   saveBtn: {
-    backgroundColor: '#22C55E', borderRadius: 14,
+    backgroundColor: colors.accent.primary, borderRadius: radius.lg,
     height: 50, justifyContent: 'center', alignItems: 'center',
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 16, fontWeight: '800', color: '#0A3A17' },
+  saveBtnText: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text.inverse },
 })

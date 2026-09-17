@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Position } from '@/types'
 import { POSITIONS } from '@/utils/positions'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
 
 export default function CreatePlayerScreen() {
   const { user } = useAuth()
@@ -87,7 +88,7 @@ export default function CreatePlayerScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color="#4ADE80" />
+            <Ionicons name="arrow-back" size={22} color={colors.accent.light} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Crear Jugador</Text>
           <View style={{ width: 40 }} />
@@ -105,7 +106,7 @@ export default function CreatePlayerScreen() {
             {/* Avatar placeholder */}
             <View style={styles.avatarBlock}>
               <View style={styles.avatar}>
-                <MaterialCommunityIcons name="soccer" size={36} color="#22C55E" />
+                <MaterialCommunityIcons name="soccer" size={36} color={colors.accent.primary} />
               </View>
               <Text style={styles.avatarHint}>Nuevo jugador</Text>
             </View>
@@ -113,11 +114,11 @@ export default function CreatePlayerScreen() {
             {/* Name */}
             <Text style={styles.label}>Nombre del jugador *</Text>
             <View style={styles.field}>
-              <Ionicons name="person-outline" size={18} color="#4ADE80" style={styles.fieldIcon} />
+              <Ionicons name="person-outline" size={18} color={colors.accent.light} style={styles.fieldIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Ej: Messi, Ronaldo..."
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.muted}
                 value={name}
                 onChangeText={setName}
                 maxLength={40}
@@ -164,7 +165,7 @@ export default function CreatePlayerScreen() {
                   <MaterialCommunityIcons
                     name={pos.iconName as any}
                     size={24}
-                    color={position === pos.key ? pos.color : '#9CA3AF'}
+                    color={position === pos.key ? pos.color : colors.text.muted}
                     style={{ marginBottom: 4 }}
                   />
                   <Text style={[styles.posKey, position === pos.key && styles.posKeyActive]}>
@@ -182,7 +183,7 @@ export default function CreatePlayerScreen() {
               disabled={loading}
               activeOpacity={0.85}
             >
-              <Ionicons name="checkmark-circle-outline" size={22} color="#0A3A17" />
+              <Ionicons name="checkmark-circle-outline" size={22} color={colors.text.inverse} />
               <Text style={styles.saveBtnText}>
                 {loading ? 'Guardando...' : '¡Añadir al equipo!'}
               </Text>
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,58,23,0.80)',
+    backgroundColor: colors.bg.overlay,
   },
   safe: { flex: 1 },
   flex: { flex: 1 },
@@ -206,83 +207,89 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(74,222,128,0.1)',
+    borderBottomColor: colors.accent.muted,
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: colors.accent.muted,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  scroll: { padding: 20, paddingBottom: 40 },
-  avatarBlock: { alignItems: 'center', marginBottom: 24 },
+  headerTitle: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.text.primary },
+  scroll: {
+    padding: spacing.xxl,
+    paddingBottom: 40,
+    width: '100%',
+    maxWidth: layout.maxWidthForm,
+    alignSelf: 'center',
+  },
+  avatarBlock: { alignItems: 'center', marginBottom: spacing.xxl },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#166534',
+    backgroundColor: colors.bg.deeper,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#22C55E',
+    borderColor: colors.accent.primary,
   },
   avatarEmoji: { fontSize: 36 },
-  avatarHint: { fontSize: 13, color: '#D1D5DB', marginTop: 8 },
-  label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)', marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' },
-  required: { fontWeight: '700', color: '#EF4444' },
+  avatarHint: { fontSize: fontSize.base, color: colors.text.secondary, marginTop: spacing.sm },
+  label: { fontSize: fontSize.base, fontWeight: '700', color: 'rgba(255,255,255,0.85)', marginBottom: spacing.sm, letterSpacing: 0.5, textTransform: 'uppercase' },
+  required: { fontWeight: '700', color: colors.status.danger },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    marginBottom: 20,
+    backgroundColor: colors.bg.card,
+    borderRadius: radius.md,
+    marginBottom: spacing.xxl,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.15)',
-    paddingHorizontal: 12,
+    borderColor: colors.accent.border,
+    paddingHorizontal: spacing.md,
   },
   fieldIcon: { marginRight: 10 },
-  input: { flex: 1, height: 50, color: '#FFFFFF', fontSize: 15 },
-  skillRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  input: { flex: 1, height: 50, color: colors.text.primary, fontSize: fontSize.lg },
+  skillRow: { flexDirection: 'row', gap: 10, marginBottom: spacing.sm },
   skillBtn: {
     flex: 1,
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    paddingVertical: 12,
+    backgroundColor: colors.bg.card,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: colors.border.subtle,
   },
-  skillBtnActive: { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.12)' },
-  skillStar: { fontSize: 22, color: '#D1D5DB' },
-  skillStarActive: { color: '#F59E0B' },
-  skillLabel: { fontSize: 11, fontWeight: '700', color: '#D1D5DB', marginTop: 2 },
-  skillLabelActive: { color: '#F59E0B' },
-  skillDesc: { fontSize: 13, color: '#D1D5DB', marginBottom: 20, textAlign: 'center' },
+  skillBtnActive: { borderColor: colors.star.active, backgroundColor: 'rgba(245,158,11,0.12)' },
+  skillStar: { fontSize: 22, color: colors.text.secondary },
+  skillStarActive: { color: colors.star.active },
+  skillLabel: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text.secondary, marginTop: 2 },
+  skillLabelActive: { color: colors.star.active },
+  skillDesc: { fontSize: fontSize.base, color: colors.text.secondary, marginBottom: spacing.xxl, textAlign: 'center' },
   posGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
   posBtn: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#111827',
-    borderRadius: 12,
+    backgroundColor: colors.bg.card,
+    borderRadius: radius.md,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: colors.border.subtle,
   },
-  posBtnActive: { borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,0.12)' },
+  posBtnActive: { borderColor: colors.accent.primary, backgroundColor: 'rgba(34,197,94,0.12)' },
   posEmoji: { fontSize: 24, marginBottom: 4 },
-  posKey: { fontSize: 16, fontWeight: '900', color: '#D1D5DB' },
-  posKeyActive: { color: '#22C55E' },
-  posLabel: { fontSize: 11, color: '#D1D5DB', marginTop: 2 },
+  posKey: { fontSize: fontSize.xl, fontWeight: '900', color: colors.text.secondary },
+  posKeyActive: { color: colors.accent.primary },
+  posLabel: { fontSize: fontSize.sm, color: colors.text.secondary, marginTop: 2 },
   saveBtn: {
-    backgroundColor: '#22C55E',
-    borderRadius: 14,
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.lg,
     height: 54,
     flexDirection: 'row',
     alignItems: 'center',
@@ -290,5 +297,5 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 16, fontWeight: '800', color: '#0A3A17' },
+  saveBtnText: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text.inverse },
 })

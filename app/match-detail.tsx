@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  TextInput,
   Alert,
   Modal,
   Share,
@@ -20,9 +21,11 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type { Player, Match, MatchPlayer, MatchType, Position } from '@/types'
 import { MATCH_TYPE_LIMITS } from '@/types'
-import { balanceTeams, avgSkill } from '@/utils/teamBalance'
+import { balanceTeams } from '@/utils/teamBalance'
 import { POSITIONS_INFO, getPositionInfo } from '@/utils/positions'
 import { formatDate } from '@/utils/date'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
+import TeamsBoard from '@/components/TeamsBoard'
 
 
 export default function MatchDetailScreen() {
@@ -33,6 +36,7 @@ export default function MatchDetailScreen() {
   const [showPlayerPicker, setShowPlayerPicker] = useState(false)
   const [showEditResult, setShowEditResult] = useState(false)
   const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([])
+  const [playerSearch, setPlayerSearch] = useState('')
   const [localTeamA, setLocalTeamA] = useState<Player[]>([])
   const [localTeamB, setLocalTeamB] = useState<Player[]>([])
   const [saving, setSaving] = useState(false)
@@ -124,6 +128,10 @@ export default function MatchDetailScreen() {
 
   const currentPlayerIds = matchPlayersRaw.map((mp) => mp.playerId)
 
+  const filteredAllPlayers = allPlayers.filter((p) =>
+    p.name.toLowerCase().includes(playerSearch.toLowerCase())
+  )
+
   const limit = match ? MATCH_TYPE_LIMITS[match.matchType as MatchType] : 5
 
   useEffect(() => {
@@ -176,6 +184,7 @@ export default function MatchDetailScreen() {
 
   const openPlayerPicker = () => {
     setTempSelectedIds(currentPlayerIds)
+    setPlayerSearch('')
     setShowPlayerPicker(true)
   }
 
@@ -349,74 +358,12 @@ export default function MatchDetailScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          {/* Team A */}
-          <View style={[styles.teamCard, styles.teamCardA]}>
-            <View style={styles.teamHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' }} />
-                <Text style={styles.teamHeaderText}>EQUIPO A</Text>
-              </View>
-              <Text style={styles.teamAvg}>Media: {avgSkill(localTeamA)}</Text>
-            </View>
-            {localTeamA.map((p) => {
-              const pos = p.position ? POSITIONS_INFO[p.position] : null
-              return (
-                <View key={p.id} style={styles.playerRow}>
-                  <MaterialCommunityIcons
-                    name={(pos ? pos.iconName : 'soccer') as any}
-                    size={18}
-                    color={pos ? pos.color : '#4ADE80'}
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={styles.playerName}>{p.name}</Text>
-                  <View style={{ flexDirection: 'row', gap: 1 }}>
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Text key={i} style={{ fontSize: 12, color: i <= p.skill ? '#F59E0B' : '#374151' }}>★</Text>
-                    ))}
-                  </View>
-                </View>
-              )
-            })}
-          </View>
-
-          {/* VS */}
-          <View style={styles.vsDivider}>
-            <View style={styles.vsLine} />
-            <View style={styles.vsCircle}>
-              <Text style={styles.vsText}>VS</Text>
-            </View>
-            <View style={styles.vsLine} />
-          </View>
-
-          {/* Team B */}
-          <View style={[styles.teamCard, styles.teamCardB]}>
-            <View style={styles.teamHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#3B82F6' }} />
-                <Text style={styles.teamHeaderText}>EQUIPO B</Text>
-              </View>
-              <Text style={styles.teamAvg}>Media: {avgSkill(localTeamB)}</Text>
-            </View>
-            {localTeamB.map((p) => {
-              const pos = p.position ? POSITIONS_INFO[p.position] : null
-              return (
-                <View key={p.id} style={styles.playerRow}>
-                  <MaterialCommunityIcons
-                    name={(pos ? pos.iconName : 'soccer') as any}
-                    size={18}
-                    color={pos ? pos.color : '#4ADE80'}
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={styles.playerName}>{p.name}</Text>
-                  <View style={{ flexDirection: 'row', gap: 1 }}>
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Text key={i} style={{ fontSize: 12, color: i <= p.skill ? '#F59E0B' : '#374151' }}>★</Text>
-                    ))}
-                  </View>
-                </View>
-              )
-            })}
-          </View>
+          <TeamsBoard
+            teamA={localTeamA}
+            teamB={localTeamB}
+            onChange={(nextA, nextB) => { setLocalTeamA(nextA); setLocalTeamB(nextB) }}
+          />
+          <View style={{ height: spacing.lg }} />
 
           {/* Actions — solo cuando no está finalizado */}
           {match.status !== 'finished' && (
@@ -774,8 +721,18 @@ export default function MatchDetailScreen() {
               <Text style={styles.modalSub}>
                 Selecciona {limit * 2} jugadores ({tempSelectedIds.length}/{limit * 2})
               </Text>
+              <View style={styles.searchBox}>
+                <Ionicons name="search" size={16} color={colors.text.muted} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Buscar jugador..."
+                  placeholderTextColor={colors.text.muted}
+                  value={playerSearch}
+                  onChangeText={setPlayerSearch}
+                />
+              </View>
               <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-                {allPlayers.map((player) => {
+                {filteredAllPlayers.map((player) => {
                   const isSelected = tempSelectedIds.includes(player.id)
                   const pos = player.position ? POSITIONS_INFO[player.position] : null
                   return (
@@ -847,33 +804,16 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' },
   headerSub: { fontSize: 13, color: '#D1D5DB', textAlign: 'center' },
-  scroll: { padding: 16, paddingBottom: 40 },
-  teamCard: {
-    backgroundColor: '#0D1F0D', borderRadius: 16, marginBottom: 6,
-    borderWidth: 1, borderColor: 'rgba(74,222,128,0.12)', overflow: 'hidden',
+  scroll: {
+    padding: 16, paddingBottom: 40,
+    width: '100%', maxWidth: layout.maxWidthContent, alignSelf: 'center',
   },
-  teamCardA: { borderTopWidth: 3, borderTopColor: '#EF4444' },
-  teamCardB: { borderTopWidth: 3, borderTopColor: '#3B82F6' },
-  teamHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    padding: 14, backgroundColor: 'rgba(255,255,255,0.04)',
+  searchBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: colors.bg.input, borderRadius: radius.md,
+    paddingHorizontal: spacing.md, height: 44, marginBottom: spacing.md,
   },
-  teamHeaderText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
-  teamAvg: { fontSize: 13, color: '#F59E0B', fontWeight: '700' },
-  playerRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)',
-  },
-  playerName: { flex: 1, fontSize: 15, color: '#F3F4F6', fontWeight: '600' },
-  vsDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 8 },
-  vsLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
-  vsCircle: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#166534', justifyContent: 'center', alignItems: 'center',
-    marginHorizontal: 12, borderWidth: 2, borderColor: '#22C55E',
-  },
-  vsText: { fontSize: 11, fontWeight: '900', color: '#22C55E' },
+  searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.md },
   actions: { flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 12 },
   changePlayersBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,

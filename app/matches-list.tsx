@@ -16,6 +16,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type { Match } from '@/types'
 import { formatDate } from '@/utils/date'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
+import { useResponsive } from '@/hooks/useResponsive'
 
 const MATCH_ICONS: Record<string, string> = {
   '5v5':   'soccer',
@@ -27,6 +29,7 @@ const MATCH_ICONS: Record<string, string> = {
 export default function MatchesListScreen() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const { isDesktop } = useResponsive()
 
   const { data: matches = [], isLoading, isError, error } = useQuery({
     queryKey: ['matches', user?.id],
@@ -73,13 +76,13 @@ export default function MatchesListScreen() {
 
   const renderItem = ({ item, index }: { item: Match; index: number }) => (
     <TouchableOpacity
-      style={styles.matchCard}
+      style={[styles.matchCard, isDesktop && styles.matchCardGrid]}
       onPress={() => router.push({ pathname: '/match-detail', params: { matchId: item.id } })}
       activeOpacity={0.82}
     >
       <View style={styles.matchLeft}>
         <View style={styles.matchEmoji}>
-          <MaterialCommunityIcons name={(MATCH_ICONS[item.matchType] ?? 'soccer') as any} size={26} color="#22C55E" />
+          <MaterialCommunityIcons name={(MATCH_ICONS[item.matchType] ?? 'soccer') as any} size={26} color={colors.accent.primary} />
         </View>
         <View>
           <Text style={styles.matchType}>{item.matchType.toUpperCase()} • {formatDate(item.date)}</Text>
@@ -102,13 +105,13 @@ export default function MatchesListScreen() {
           style={styles.editBtn}
           onPress={() => router.push({ pathname: '/match-detail', params: { matchId: item.id } })}
         >
-          <Ionicons name="create-outline" size={18} color="#4ADE80" />
+          <Ionicons name="create-outline" size={18} color={colors.accent.light} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteBtn}
           onPress={() => handleDelete(item)}
         >
-          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+          <Ionicons name="trash-outline" size={18} color={colors.status.danger} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -124,17 +127,17 @@ export default function MatchesListScreen() {
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color="#4ADE80" />
+            <Ionicons name="arrow-back" size={22} color={colors.accent.light} />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Ionicons name="clipboard-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="clipboard-outline" size={18} color={colors.text.primary} />
             <Text style={styles.headerTitle}>Mis Partidos</Text>
           </View>
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => router.push('/create-match')}
           >
-            <Ionicons name="add" size={22} color="#0A3A17" />
+            <Ionicons name="add" size={22} color={colors.text.inverse} />
           </TouchableOpacity>
         </View>
 
@@ -149,14 +152,17 @@ export default function MatchesListScreen() {
         )}
 
         <FlatList
+          key={isDesktop ? 'grid' : 'list'}
           data={matches}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
+          numColumns={isDesktop ? 3 : 1}
+          columnWrapperStyle={isDesktop ? styles.columnWrapper : undefined}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <MaterialCommunityIcons name="soccer-field" size={64} color="#4ADE80" style={{ marginBottom: 12 }} />
+              <MaterialCommunityIcons name="soccer-field" size={64} color={colors.accent.light} style={{ marginBottom: 12 }} />
               <Text style={styles.emptyText}>
                 {isLoading ? 'Cargando partidos...' : isError ? 'Error de conexión' : 'No hay partidos aún.\n¡Organiza uno!'}
               </Text>
@@ -180,58 +186,66 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,58,23,0.80)',
+    backgroundColor: colors.bg.overlay,
   },
   safe: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(74,222,128,0.1)',
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+    borderBottomWidth: 1, borderBottomColor: colors.accent.muted,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: colors.accent.muted,
     justifyContent: 'center', alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+  headerTitle: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.text.primary },
   addBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#22C55E',
+    backgroundColor: colors.accent.primary,
     justifyContent: 'center', alignItems: 'center',
   },
-  list: { padding: 16, paddingBottom: 40 },
+  list: {
+    padding: spacing.lg,
+    paddingBottom: 40,
+    width: '100%',
+    maxWidth: layout.maxWidthContent,
+    alignSelf: 'center',
+  },
+  columnWrapper: { gap: spacing.md },
   matchCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#0D1F0D', borderRadius: 14,
+    backgroundColor: colors.bg.deep, borderRadius: radius.lg,
     marginBottom: 10, padding: 14,
-    borderWidth: 1, borderColor: 'rgba(74,222,128,0.1)',
+    borderWidth: 1, borderColor: colors.accent.muted,
   },
+  matchCardGrid: { flex: 1, maxWidth: 340 },
   matchLeft: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   matchEmoji: {
-    width: 52, height: 52, borderRadius: 14,
+    width: 52, height: 52, borderRadius: radius.lg,
     backgroundColor: 'rgba(34,197,94,0.12)',
     justifyContent: 'center', alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   matchEmojiText: { fontSize: 26 },
-  matchType: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 },
-  matchSub: { fontSize: 12, color: '#D1D5DB', marginBottom: 4 },
+  matchType: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text.primary, marginBottom: 2 },
+  matchSub: { fontSize: fontSize.base, color: colors.text.secondary, marginBottom: 4 },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(34,197,94,0.1)',
     borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
     alignSelf: 'flex-start',
   },
-  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' },
-  statusText: { fontSize: 10, fontWeight: '700', color: '#22C55E' },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent.primary },
+  statusText: { fontSize: fontSize.xs, fontWeight: '700', color: colors.accent.primary },
   statusBadgeFinished: { backgroundColor: 'rgba(59,130,246,0.12)' },
   statusDotFinished: { backgroundColor: '#60A5FA' },
   statusTextFinished: { color: '#93C5FD' },
-  scoreText: { fontSize: 13, fontWeight: '800', color: '#4ADE80', marginTop: 3 },
+  scoreText: { fontSize: fontSize.base, fontWeight: '800', color: colors.accent.light, marginTop: 3 },
   matchRight: { flexDirection: 'row', gap: 8 },
   editBtn: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: colors.accent.muted,
     justifyContent: 'center', alignItems: 'center',
   },
   deleteBtn: {
@@ -241,10 +255,10 @@ const styles = StyleSheet.create({
   },
   empty: { alignItems: 'center', paddingTop: 80 },
   emptyEmoji: { fontSize: 56, marginBottom: 12 },
-  emptyText: { color: '#D1D5DB', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  emptyText: { color: colors.text.secondary, fontSize: fontSize.lg, textAlign: 'center', lineHeight: 22 },
   emptyBtn: {
-    marginTop: 16, backgroundColor: '#22C55E',
-    borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,
+    marginTop: spacing.lg, backgroundColor: colors.accent.primary,
+    borderRadius: radius.md, paddingHorizontal: spacing.xxl, paddingVertical: spacing.md,
   },
-  emptyBtnText: { color: '#0A3A17', fontWeight: '700' },
+  emptyBtnText: { color: colors.text.inverse, fontWeight: '700' },
 })

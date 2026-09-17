@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
 import { POSITIONS_INFO } from '@/utils/positions'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
 
 type PlayerEntry = {
   id: string
@@ -123,7 +124,7 @@ export default function VotePage() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#22C55E" />
+        <ActivityIndicator size="large" color={colors.accent.primary} />
         <Text style={styles.loadingText}>Cargando partido...</Text>
       </View>
     )
@@ -141,7 +142,7 @@ export default function VotePage() {
   if (notFound) {
     return (
       <View style={styles.center}>
-        <MaterialCommunityIcons name="lock-outline" size={64} color="#D1D5DB" style={{ marginBottom: 12 }} />
+        <MaterialCommunityIcons name="lock-outline" size={64} color={colors.text.secondary} style={{ marginBottom: 12 }} />
         <Text style={styles.doneTitle}>Votación no disponible</Text>
         <Text style={styles.doneSubtitle}>
           Este enlace no corresponde a ningún partido activo o la votación ya ha finalizado.
@@ -154,7 +155,7 @@ export default function VotePage() {
   if (alreadyVoted || done) {
     return (
       <View style={styles.center}>
-        <MaterialCommunityIcons name="star-circle" size={64} color="#F59E0B" style={{ marginBottom: 12 }} />
+        <MaterialCommunityIcons name="star-circle" size={64} color={colors.star.active} style={{ marginBottom: 12 }} />
         <Text style={styles.doneTitle}>¡Gracias por votar!</Text>
         {done && selectedPlayer && (
           <Text style={styles.doneSubtitle}>
@@ -174,7 +175,7 @@ export default function VotePage() {
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.header}>
-        <MaterialCommunityIcons name="soccer" size={48} color="#4ADE80" style={{ marginBottom: 8 }} />
+        <MaterialCommunityIcons name="soccer" size={48} color={colors.accent.light} style={{ marginBottom: 8 }} />
         <Text style={styles.headerTitle}>tuPachanga</Text>
         <Text style={styles.headerSub}>Vota al MVP del partido</Text>
         {matchInfo && (
@@ -203,7 +204,7 @@ export default function VotePage() {
             <MaterialCommunityIcons
               name={(pos ? pos.iconName : 'soccer') as any}
               size={22}
-              color={pos ? pos.color : '#4ADE80'}
+              color={pos ? pos.color : colors.accent.light}
               style={{ marginRight: 8 }}
             />
             <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
@@ -229,7 +230,7 @@ export default function VotePage() {
             <MaterialCommunityIcons
               name={(pos ? pos.iconName : 'soccer') as any}
               size={22}
-              color={pos ? pos.color : '#4ADE80'}
+              color={pos ? pos.color : colors.accent.light}
               style={{ marginRight: 8 }}
             />
             <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
@@ -263,52 +264,58 @@ export default function VotePage() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0A1628' },
-  content: { padding: 20, paddingBottom: 60 },
+  content: {
+    padding: spacing.xl,
+    paddingBottom: 60,
+    width: '100%',
+    maxWidth: layout.maxWidthContent,
+    alignSelf: 'center',
+  },
   center: {
     flex: 1, backgroundColor: '#0A1628',
     justifyContent: 'center', alignItems: 'center', padding: 40,
   },
-  loadingText: { color: '#D1D5DB', marginTop: 12, fontSize: 15 },
+  loadingText: { color: colors.text.secondary, marginTop: spacing.md, fontSize: fontSize.lg },
   errorEmoji: { fontSize: 48, marginBottom: 12 },
-  errorText: { color: '#FCA5A5', textAlign: 'center', fontSize: 15 },
-  header: { alignItems: 'center', marginBottom: 24 },
+  errorText: { color: '#FCA5A5', textAlign: 'center', fontSize: fontSize.lg },
+  header: { alignItems: 'center', marginBottom: spacing.xxl },
   headerBall: { fontSize: 48, marginBottom: 8 },
-  headerTitle: { fontSize: 28, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 },
-  headerSub: { fontSize: 14, color: '#4ADE80', fontWeight: '600', marginTop: 4 },
-  matchInfo: { fontSize: 13, color: '#9CA3AF', marginTop: 6 },
-  instruction: { fontSize: 14, color: '#D1D5DB', textAlign: 'center', marginBottom: 20 },
+  headerTitle: { fontSize: 28, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5 },
+  headerSub: { fontSize: fontSize.md, color: colors.accent.light, fontWeight: '600', marginTop: 4 },
+  matchInfo: { fontSize: fontSize.base, color: colors.text.muted, marginTop: 6 },
+  instruction: { fontSize: fontSize.md, color: colors.text.secondary, textAlign: 'center', marginBottom: spacing.xl },
   teamLabelA: {
-    fontSize: 12, fontWeight: '800', color: '#EF4444',
-    letterSpacing: 1, marginBottom: 8, marginTop: 4,
+    fontSize: 12, fontWeight: '800', color: colors.team.A,
+    letterSpacing: 1, marginBottom: spacing.sm, marginTop: 4,
   },
   teamLabelB: {
-    fontSize: 12, fontWeight: '800', color: '#3B82F6',
-    letterSpacing: 1, marginBottom: 8, marginTop: 16,
+    fontSize: 12, fontWeight: '800', color: colors.team.B,
+    letterSpacing: 1, marginBottom: spacing.sm, marginTop: spacing.lg,
   },
   playerCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1A2234', borderRadius: 12,
-    padding: 14, marginBottom: 8,
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: '#1A2234', borderRadius: radius.md,
+    padding: 14, marginBottom: spacing.sm,
+    borderWidth: 1.5, borderColor: colors.border.subtle,
   },
   playerCardSelected: {
-    borderColor: '#F59E0B',
+    borderColor: colors.star.active,
     backgroundColor: 'rgba(245,158,11,0.1)',
   },
-  playerEmoji: { fontSize: 22, marginRight: 12 },
-  playerName: { flex: 1, fontSize: 16, fontWeight: '700', color: '#F3F4F6' },
-  playerNameSelected: { color: '#F59E0B' },
-  checkmark: { fontSize: 20, color: '#F59E0B', fontWeight: '900' },
+  playerEmoji: { fontSize: 22, marginRight: spacing.md },
+  playerName: { flex: 1, fontSize: fontSize.xl, fontWeight: '700', color: '#F3F4F6' },
+  playerNameSelected: { color: colors.star.active },
+  checkmark: { fontSize: 20, color: colors.star.active, fontWeight: '900' },
   voteBtn: {
-    backgroundColor: '#22C55E', borderRadius: 14,
+    backgroundColor: colors.accent.primary, borderRadius: radius.lg,
     height: 56, justifyContent: 'center', alignItems: 'center',
-    marginTop: 24, marginBottom: 8,
+    marginTop: spacing.xxl, marginBottom: spacing.sm,
   },
   voteBtnDisabled: { opacity: 0.4 },
-  voteBtnText: { fontSize: 16, fontWeight: '800', color: '#0A3A17' },
-  footer: { textAlign: 'center', color: '#4B5563', fontSize: 12, marginTop: 20 },
-  doneTitle: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginTop: 16, marginBottom: 8 },
-  doneSubtitle: { fontSize: 15, color: '#D1D5DB', textAlign: 'center' },
-  donePlayerName: { color: '#F59E0B', fontWeight: '800' },
-  doneFooter: { color: '#4B5563', fontSize: 13, marginTop: 24 },
+  voteBtnText: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text.inverse },
+  footer: { textAlign: 'center', color: '#4B5563', fontSize: 12, marginTop: spacing.xl },
+  doneTitle: { fontSize: 22, fontWeight: '900', color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
+  doneSubtitle: { fontSize: fontSize.lg, color: colors.text.secondary, textAlign: 'center' },
+  donePlayerName: { color: colors.star.active, fontWeight: '800' },
+  doneFooter: { color: '#4B5563', fontSize: fontSize.base, marginTop: spacing.xxl },
 })

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  TextInput,
   Alert,
   Platform,
   Modal,
@@ -18,14 +19,17 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { usePlayers } from '@/hooks/usePlayers'
 import type { Player, MatchType, Position } from '@/types'
 import { MATCH_TYPE_LIMITS } from '@/types'
-import { balanceTeams, avgSkill } from '@/utils/teamBalance'
+import { balanceTeams } from '@/utils/teamBalance'
 import { POSITIONS_INFO, getPositionInfo } from '@/utils/positions'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
+import TeamsBoard from '@/components/TeamsBoard'
 
 const MATCH_TYPES: { key: MatchType; label: string; iconName: string; total: number }[] = [
   { key: '5v5',   label: '5 contra 5',   iconName: 'soccer',         total: 10 },
@@ -50,26 +54,15 @@ export default function CreateMatchScreen() {
   const [teams, setTeams] = useState<{ teamA: Player[]; teamB: Player[] } | null>(null)
   const [saving, setSaving] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [search, setSearch] = useState('')
 
   const limit = MATCH_TYPE_LIMITS[matchType]
 
-  const { data: players = [] } = useQuery({
-    queryKey: ['players', user?.id],
-    queryFn: async () => {
-      if (!user) return []
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name')
-      if (error) throw error
-      return (data ?? []).map((r: any) => ({
-        id: r.id, userId: r.user_id, name: r.name,
-        skill: r.skill, position: r.position, createdAt: r.created_at,
-      })) as Player[]
-    },
-    enabled: !!user,
-  })
+  const { data: players = [] } = usePlayers()
+
+  const filteredPlayers = players.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   const togglePlayer = (player: Player) => {
     const isSelected = selectedPlayers.some((p) => p.id === player.id)
@@ -350,6 +343,17 @@ export default function CreateMatchScreen() {
             </View>
           </View>
 
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={16} color={colors.text.muted} style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar jugador..."
+              placeholderTextColor={colors.text.muted}
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+
           <ScrollView contentContainerStyle={styles.playerList} showsVerticalScrollIndicator={false}>
             {players.length === 0 ? (
               <View style={styles.empty}>
@@ -359,8 +363,13 @@ export default function CreateMatchScreen() {
                   <Text style={styles.emptyBtnText}>Crear jugador</Text>
                 </TouchableOpacity>
               </View>
+            ) : filteredPlayers.length === 0 ? (
+              <View style={styles.empty}>
+                <MaterialCommunityIcons name="account-search-outline" size={56} color="#4ADE80" style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyText}>Ningún jugador coincide con "{search}".</Text>
+              </View>
             ) : (
-              players.map((player) => {
+              filteredPlayers.map((player) => {
                 const isSelected = selectedPlayers.some((p) => p.id === player.id)
                 const pos = player.position ? POSITIONS_INFO[player.position] : null
                 return (
@@ -435,76 +444,13 @@ export default function CreateMatchScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.teamsContainer}>
-            {/* Team A */}
-            <View style={[styles.teamCard, styles.teamCardA]}>
-              <View style={styles.teamHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' }} />
-                  <Text style={styles.teamHeaderText}>EQUIPO A</Text>
-                </View>
-                <Text style={styles.teamAvg}>Media: {avgSkill(teams?.teamA || [])}</Text>
-              </View>
-              {teams?.teamA.map((p) => {
-                const pos = p.position ? POSITIONS_INFO[p.position] : null
-                return (
-                  <View key={p.id} style={styles.teamPlayerRow}>
-                    <MaterialCommunityIcons
-                      name={(pos ? pos.iconName : 'soccer') as any}
-                      size={16}
-                      color={pos ? pos.color : '#4ADE80'}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text style={styles.teamPlayerName}>{p.name}</Text>
-                    <View style={{ flexDirection: 'row', gap: 1 }}>
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Text key={i} style={{ fontSize: 10, color: i <= p.skill ? '#F59E0B' : '#374151' }}>★</Text>
-                      ))}
-                    </View>
-                  </View>
-                )
-              })}
-            </View>
+          <TeamsBoard
+            teamA={teams?.teamA ?? []}
+            teamB={teams?.teamB ?? []}
+            onChange={(nextA, nextB) => setTeams({ teamA: nextA, teamB: nextB })}
+          />
 
-            {/* VS divider */}
-            <View style={styles.vsDivider}>
-              <View style={styles.vsLine} />
-              <View style={styles.vsCircle}>
-                <Text style={styles.vsText}>VS</Text>
-              </View>
-              <View style={styles.vsLine} />
-            </View>
-
-            {/* Team B */}
-            <View style={[styles.teamCard, styles.teamCardB]}>
-              <View style={styles.teamHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#3B82F6' }} />
-                  <Text style={styles.teamHeaderText}>EQUIPO B</Text>
-                </View>
-                <Text style={styles.teamAvg}>Media: {avgSkill(teams?.teamB || [])}</Text>
-              </View>
-              {teams?.teamB.map((p) => {
-                const pos = p.position ? POSITIONS_INFO[p.position] : null
-                return (
-                  <View key={p.id} style={styles.teamPlayerRow}>
-                    <MaterialCommunityIcons
-                      name={(pos ? pos.iconName : 'soccer') as any}
-                      size={16}
-                      color={pos ? pos.color : '#4ADE80'}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text style={styles.teamPlayerName}>{p.name}</Text>
-                    <View style={{ flexDirection: 'row', gap: 1 }}>
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Text key={i} style={{ fontSize: 10, color: i <= p.skill ? '#F59E0B' : '#374151' }}>★</Text>
-                      ))}
-                    </View>
-                  </View>
-                )
-              })}
-            </View>
-          </View>
+          <View style={{ height: spacing.lg }} />
 
           {/* Info bar */}
           <View style={styles.infoBar}>
@@ -570,7 +516,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  scroll: { padding: 16, paddingBottom: 40 },
+  scroll: { padding: 16, paddingBottom: 40, width: '100%', maxWidth: layout.maxWidthContent, alignSelf: 'center' },
+  searchBox: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.bg.card, marginHorizontal: 16, marginBottom: 10,
+    borderRadius: radius.md, paddingHorizontal: spacing.md,
+    borderWidth: 1, borderColor: colors.border.subtle,
+  },
+  searchInput: { flex: 1, height: 44, color: colors.text.primary, fontSize: fontSize.md },
   sectionLabel: {
     fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)',
     textTransform: 'uppercase', letterSpacing: 0.5,
@@ -633,7 +586,7 @@ const styles = StyleSheet.create({
     height: 4, backgroundColor: '#22C55E', borderRadius: 2,
   },
   // Player select
-  playerList: { paddingHorizontal: 16, paddingBottom: 100 },
+  playerList: { paddingHorizontal: 16, paddingBottom: 100, width: '100%', maxWidth: layout.maxWidthContent, alignSelf: 'center' },
   playerRow: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#111827', borderRadius: 12, marginBottom: 8, padding: 12,
@@ -665,37 +618,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
   },
   teamBtnText: { fontSize: 15, fontWeight: '800', color: '#0A3A17' },
-  // Teams
-  teamsContainer: { gap: 12, marginBottom: 16 },
-  teamCard: {
-    backgroundColor: '#111827', borderRadius: 16, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
-  },
-  teamCardA: { borderTopWidth: 3, borderTopColor: '#EF4444' },
-  teamCardB: { borderTopWidth: 3, borderTopColor: '#3B82F6' },
-  teamHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    padding: 14, backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  teamHeaderText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
-  teamAvg: { fontSize: 13, color: '#F59E0B', fontWeight: '700' },
-  teamPlayerRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)',
-  },
-  teamPlayerName: { flex: 1, fontSize: 14, color: '#FFFFFF', fontWeight: '500' },
-  vsDivider: {
-    flexDirection: 'row', alignItems: 'center', marginVertical: 4,
-  },
-  vsLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
-  vsCircle: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#166534', justifyContent: 'center', alignItems: 'center',
-    marginHorizontal: 12,
-    borderWidth: 2, borderColor: '#22C55E',
-  },
-  vsText: { fontSize: 11, fontWeight: '900', color: '#22C55E' },
   infoBar: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   infoBadge: {
     flex: 1, backgroundColor: '#111827', borderRadius: 12, padding: 12, alignItems: 'center',

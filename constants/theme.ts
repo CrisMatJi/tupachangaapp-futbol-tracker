@@ -95,3 +95,10 @@ export const fontSize = {
   xxl: 18,
   xxxl: 20,
 } as const
+
+// Anchos máximos de contenido en pantallas anchas (tablet/desktop),
+// para que no se estire borde a borde.
+export const layout = {
+  maxWidthForm: 480,
+  maxWidthContent: 1100,
+} as const

@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
 
 interface MenuItemProps {
   icon: string
@@ -92,14 +93,14 @@ export default function HomeScreen() {
             </Text>
           </View>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={22} color="#4ADE80" />
+            <Ionicons name="log-out-outline" size={22} color={colors.accent.light} />
           </TouchableOpacity>
         </View>
 
         {/* Title */}
         <View style={styles.titleBlock}>
           <View style={styles.titleRow}>
-            <MaterialCommunityIcons name="soccer" size={30} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <MaterialCommunityIcons name="soccer" size={30} color={colors.text.primary} style={{ marginRight: 8 }} />
             <Text style={styles.appTitle}>tuPachanga</Text>
           </View>
           <Text style={styles.appSubtitle}>App</Text>
@@ -109,9 +110,9 @@ export default function HomeScreen() {
         {/* Grass strip */}
         <View style={styles.grassStrip}>
           <View style={styles.grassInner}>
-            <MaterialCommunityIcons name="soccer" size={13} color="#4ADE80" />
+            <MaterialCommunityIcons name="soccer" size={13} color={colors.accent.light} />
             <Text style={styles.grassText}>  EL CAMPO TE ESPERA  </Text>
-            <MaterialCommunityIcons name="soccer" size={13} color="#4ADE80" />
+            <MaterialCommunityIcons name="soccer" size={13} color={colors.accent.light} />
           </View>
         </View>
 
@@ -133,7 +134,7 @@ export default function HomeScreen() {
             icon="soccer"
             title="Crear Partido"
             subtitle="Organiza una nueva pachanga"
-            color="#22C55E"
+            color={colors.accent.primary}
             bgColor="rgba(34,197,94,0.15)"
             onPress={() => router.push('/create-match')}
           />
@@ -161,7 +162,7 @@ export default function HomeScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <MaterialCommunityIcons name="trophy" size={32} color="#22C55E" />
+            <MaterialCommunityIcons name="trophy" size={32} color={colors.accent.primary} />
             <View style={{ flex: 1 }}>
               <Text style={styles.promoTitle}>Organiza partidos perfectos</Text>
               <Text style={styles.promoSub}>Equipos equilibrados automáticamente por posición y nivel</Text>
@@ -177,50 +178,50 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,58,23,0.78)',
+    backgroundColor: colors.bg.overlayMenu,
   },
   safe: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
     paddingTop: 8,
     paddingBottom: 4,
   },
-  welcomeText: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
-  userEmail: { fontSize: 13, color: '#4ADE80', fontWeight: '600', maxWidth: 220 },
+  welcomeText: { fontSize: fontSize.sm, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
+  userEmail: { fontSize: fontSize.base, color: colors.accent.light, fontWeight: '600', maxWidth: 220 },
   logoutBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: colors.accent.muted,
     justifyContent: 'center',
     alignItems: 'center',
   },
   titleBlock: { alignItems: 'center', paddingTop: 8, paddingBottom: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
-  appTitle: { fontSize: 32, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 },
+  appTitle: { fontSize: 32, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5 },
   appSubtitle: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#4ADE80',
+    color: colors.accent.light,
     letterSpacing: -0.3,
     marginTop: -4,
   },
   titleDecor: {
-    marginTop: 8,
+    marginTop: spacing.sm,
     width: 60,
     height: 3,
-    backgroundColor: '#22C55E',
+    backgroundColor: colors.accent.primary,
     borderRadius: 2,
   },
   grassStrip: {
-    backgroundColor: '#166534',
-    marginHorizontal: 16,
+    backgroundColor: colors.bg.deeper,
+    marginHorizontal: spacing.lg,
     marginVertical: 10,
-    borderRadius: 8,
-    paddingVertical: 8,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.sm,
     alignItems: 'center',
   },
   grassInner: {
@@ -228,35 +229,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   grassText: {
-    fontSize: 12,
+    fontSize: fontSize.sm,
     fontWeight: '700',
-    color: '#4ADE80',
+    color: colors.accent.light,
     letterSpacing: 2,
   },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 24 },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+    width: '100%',
+    maxWidth: layout.maxWidthContent,
+    alignSelf: 'center',
+  },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0D1F0D',
-    borderRadius: 16,
-    marginBottom: 12,
-    padding: 16,
+    backgroundColor: colors.bg.deep,
+    borderRadius: radius.xl,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: 'rgba(74,222,128,0.12)',
   },
   menuIcon: {
     width: 52,
     height: 52,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
   menuEmoji: { fontSize: 26 },
   menuText: { flex: 1 },
-  menuTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', marginBottom: 3 },
-  menuSubtitle: { fontSize: 13, color: '#D1D5DB', fontWeight: '400', lineHeight: 18 },
+  menuTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text.primary, marginBottom: 3 },
+  menuSubtitle: { fontSize: fontSize.base, color: colors.text.secondary, fontWeight: '400', lineHeight: 18 },
   menuArrow: {
     width: 32,
     height: 32,
@@ -271,26 +278,26 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: colors.bg.section,
+    borderRadius: radius.md,
+    padding: spacing.md,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
   statEmoji: { fontSize: 22, marginBottom: 4 },
-  statLabel: { fontSize: 10, color: '#D1D5DB', fontWeight: '500', textAlign: 'center' },
+  statLabel: { fontSize: fontSize.xs, color: colors.text.secondary, fontWeight: '500', textAlign: 'center' },
   promoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
     marginTop: 8,
     gap: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.2)',
+    borderColor: colors.accent.border,
   },
   promoEmoji: { fontSize: 32 },
-  promoTitle: { fontSize: 14, fontWeight: '700', color: '#FFFFFF', marginBottom: 4 },
-  promoSub: { fontSize: 12, color: '#D1D5DB', lineHeight: 17 },
+  promoTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.text.primary, marginBottom: 4 },
+  promoSub: { fontSize: fontSize.base, color: colors.text.secondary, lineHeight: 17 },
 })
