@@ -6,10 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   Modal,
-  Share,
-  Linking,
   ImageBackground,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -18,6 +15,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { showAlert, shareText, shareWhatsApp, getAppUrl } from '@/lib/webCompat'
 import { useAuth } from '@/hooks/useAuth'
 import type { Player, Match, MatchPlayer, MatchType, Position } from '@/types'
 import { MATCH_TYPE_LIMITS } from '@/types'
@@ -150,7 +148,7 @@ export default function MatchDetailScreen() {
 
   const handleFinishMatch = async () => {
     if (!matchId || !user) return
-    Alert.alert(
+    showAlert(
       'Finalizar partido',
       `¿Confirmas el resultado ${scoreA} - ${scoreB}?`,
       [
@@ -169,10 +167,10 @@ export default function MatchDetailScreen() {
               if (error) throw error
               queryClient.invalidateQueries({ queryKey: ['match', matchId] })
               queryClient.invalidateQueries({ queryKey: ['matches'] })
-              Alert.alert('¡Partido finalizado!', 'El resultado ha sido guardado.')
+              showAlert('¡Partido finalizado!', 'El resultado ha sido guardado.')
             } catch (err: any) {
               console.error('[match-detail] Error finalizando partido:', JSON.stringify(err, null, 2))
-              Alert.alert('Error', err?.message || 'No se pudo finalizar el partido.')
+              showAlert('Error', err?.message || 'No se pudo finalizar el partido.')
             } finally {
               setSaving(false)
             }
@@ -198,7 +196,7 @@ export default function MatchDetailScreen() {
 
   const handleApplyNewPlayers = () => {
     if (tempSelectedIds.length !== limit * 2) {
-      Alert.alert('Error', `Necesitas ${limit * 2} jugadores.`)
+      showAlert('Error', `Necesitas ${limit * 2} jugadores.`)
       return
     }
     const selected = allPlayers.filter((p) => tempSelectedIds.includes(p.id))
@@ -228,17 +226,11 @@ export default function MatchDetailScreen() {
   }
 
   const handleShareLineup = async () => {
-    try { await Share.share({ message: formatLineup() }) } catch {}
+    await shareText(formatLineup())
   }
 
   const handleShareWhatsApp = async () => {
-    const text = formatLineup()
-    const url = `whatsapp://send?text=${encodeURIComponent(text)}`
-    if (await Linking.canOpenURL(url)) {
-      await Linking.openURL(url)
-    } else {
-      await Share.share({ message: text })
-    }
+    await shareWhatsApp(formatLineup())
   }
 
   // ── Votación MVP ──
@@ -258,12 +250,12 @@ export default function MatchDetailScreen() {
   }
 
   const doShareVote = async (deadlineStr: string) => {
-    const appUrl = process.env.EXPO_PUBLIC_APP_URL ?? 'http://localhost:8081'
+    const appUrl = getAppUrl()
     const voteUrl = `${appUrl}/vote/${matchId}`
     const dateStr = match ? formatDate(match.date) : ''
     const type = match?.matchType?.toUpperCase() ?? ''
     const message = `⭐ *Vota al MVP de la pachanga*\n📅 ${dateStr} · ${type}\n\nAbre este enlace y elige tu MVP 👇\n${voteUrl}\n\n⏰ ${deadlineStr}\n🏆 tuPachanga`
-    try { await Share.share({ message }) } catch {}
+    await shareText(message)
   }
 
   const handleShareVote = () => {
@@ -273,7 +265,7 @@ export default function MatchDetailScreen() {
     const inTwoH = new Date(now.getTime() + 2 * 60 * 60 * 1000)
     const tonight = new Date(now); tonight.setHours(22, 0, 0, 0)
     const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(12, 0, 0, 0)
-    Alert.alert('Abrir votación MVP', '¿Cuándo cierra la votación?', [
+    showAlert('Abrir votación MVP', '¿Cuándo cierra la votación?', [
       { text: `En 2h  (${fmt(inTwoH)})`, onPress: () => doShareVote(`Votación abierta hasta el ${fmt(inTwoH)}`) },
       { text: `Esta noche  (${fmt(tonight)})`, onPress: () => doShareVote(`Votación abierta hasta el ${fmt(tonight)}`) },
       { text: `Mañana mediodía  (${fmt(tomorrow)})`, onPress: () => doShareVote(`Votación abierta hasta el ${fmt(tomorrow)}`) },
@@ -314,10 +306,10 @@ export default function MatchDetailScreen() {
 
       queryClient.invalidateQueries({ queryKey: ['matchPlayers', matchId] })
       queryClient.invalidateQueries({ queryKey: ['matches'] })
-      Alert.alert('¡Guardado!', 'El partido ha sido actualizado.')
+      showAlert('¡Guardado!', 'El partido ha sido actualizado.')
     } catch (err: any) {
       console.error('[match-detail] Error guardando cambios:', JSON.stringify(err, null, 2))
-      Alert.alert('Error', err?.message || 'No se pudo guardar los cambios.')
+      showAlert('Error', err?.message || 'No se pudo guardar los cambios.')
     } finally {
       setSaving(false)
     }
@@ -692,7 +684,7 @@ export default function MatchDetailScreen() {
                     queryClient.invalidateQueries({ queryKey: ['matches'] })
                     setShowEditResult(false)
                   } catch (err: any) {
-                    Alert.alert('Error', err?.message || 'No se pudo guardar')
+                    showAlert('Error', err?.message || 'No se pudo guardar')
                   } finally {
                     setSaving(false)
                   }

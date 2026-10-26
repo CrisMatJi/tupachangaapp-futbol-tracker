@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ImageBackground,
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '@/lib/supabase'
+import { showAlert } from '@/lib/webCompat'
 import { useAuth } from '@/hooks/useAuth'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Position } from '@/types'
@@ -32,11 +32,11 @@ export default function CreatePlayerScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'El nombre del jugador es obligatorio.')
+      showAlert('Error', 'El nombre del jugador es obligatorio.')
       return
     }
     if (!position) {
-      Alert.alert('Error', 'Debes seleccionar una posición para el jugador.')
+      showAlert('Error', 'Debes seleccionar una posición para el jugador.')
       return
     }
     if (!user) return
@@ -51,7 +51,7 @@ export default function CreatePlayerScreen() {
         .ilike('name', name.trim())
         .limit(1)
       if (existing && existing.length > 0) {
-        Alert.alert('Nombre duplicado', `Ya tienes un jugador llamado "${name.trim()}". Elige otro nombre.`)
+        showAlert('Nombre duplicado', `Ya tienes un jugador llamado "${name.trim()}". Elige otro nombre.`)
         setLoading(false)
         return
       }
@@ -66,12 +66,12 @@ export default function CreatePlayerScreen() {
       })
       if (error) throw error
       await queryClient.invalidateQueries({ queryKey: ['players'] })
-      Alert.alert('¡Listo!', `${name.trim()} ha sido añadido al equipo.`, [
+      showAlert('¡Listo!', `${name.trim()} ha sido añadido al equipo.`, [
         { text: 'Crear otro', onPress: () => { setName(''); setSkill(3); setPosition(null) } },
         { text: 'Ir al menú', onPress: () => router.replace('/home') },
       ])
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'No se pudo crear el jugador.')
+      showAlert('Error', err?.message || 'No se pudo crear el jugador.')
     } finally {
       setLoading(false)
     }

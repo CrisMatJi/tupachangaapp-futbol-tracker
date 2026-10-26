@@ -6,12 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
+import { showAlert } from '@/lib/webCompat'
 import { POSITIONS_INFO } from '@/utils/positions'
 import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
 
@@ -111,7 +111,7 @@ export default function VotePage() {
       } catch {}
       setDone(true)
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'No se pudo registrar el voto')
+      showAlert('Error', e.message ?? 'No se pudo registrar el voto')
     } finally {
       setSubmitting(false)
     }

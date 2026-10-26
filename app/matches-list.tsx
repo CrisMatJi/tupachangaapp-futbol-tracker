@@ -4,7 +4,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Alert,
   ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
@@ -13,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { showAlert } from '@/lib/webCompat'
 import { useAuth } from '@/hooks/useAuth'
 import type { Match } from '@/types'
 import { formatDate } from '@/utils/date'
@@ -60,11 +60,11 @@ export default function MatchesListScreen() {
       if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['matches'] }),
-    onError: (err: any) => Alert.alert('Error', err?.message),
+    onError: (err: any) => showAlert('Error', err?.message),
   })
 
   const handleDelete = (match: Match) => {
-    Alert.alert('Eliminar partido', `¿Eliminar el partido del ${formatDate(match.date)}?`, [
+    showAlert('Eliminar partido', `¿Eliminar el partido del ${formatDate(match.date)}?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
