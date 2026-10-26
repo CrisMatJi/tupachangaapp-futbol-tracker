@@ -36,6 +36,11 @@ jobs:
       - name: Ensure .nojekyll (evita que Pages ignore carpetas _expo/)
         run: touch dist/.nojekyll
 
+      # GitHub Pages no tiene rewrites: rutas dinámicas como /vote/<id> darían 404.
+      # Servimos la app desde 404.html para que expo-router resuelva la ruta en cliente.
+      - name: SPA fallback para rutas dinámicas
+        run: cp dist/index.html dist/404.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
-  Alert,
   Modal,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +17,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { showAlert } from '@/lib/webCompat'
 import { useAuth } from '@/hooks/useAuth'
 import type { Player, Position } from '@/types'
 import { POSITIONS } from '@/utils/positions'
@@ -74,9 +74,9 @@ export default function PlayersListScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['players'] })
       setEditPlayer(null)
-      Alert.alert('¡Actualizado!', 'El jugador ha sido modificado.')
+      showAlert('¡Actualizado!', 'El jugador ha sido modificado.')
     },
-    onError: (err: any) => Alert.alert('Error', err?.message),
+    onError: (err: any) => showAlert('Error', err?.message),
   })
 
   const deleteMutation = useMutation({
@@ -111,7 +111,7 @@ export default function PlayersListScreen() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['players'] }),
     onError: (err: any) =>
-      Alert.alert('No se puede eliminar', err?.message ?? 'Error desconocido.'),
+      showAlert('No se puede eliminar', err?.message ?? 'Error desconocido.'),
   })
 
   const openEdit = (player: Player) => {
@@ -124,7 +124,7 @@ export default function PlayersListScreen() {
   const handleUpdate = () => {
     if (!editName.trim() || !editPlayer) return
     if (!editPosition) {
-      Alert.alert('Error', 'Debes seleccionar una posición.')
+      showAlert('Error', 'Debes seleccionar una posición.')
       return
     }
     updateMutation.mutate({
@@ -136,7 +136,7 @@ export default function PlayersListScreen() {
   }
 
   const handleDelete = (player: Player) => {
-    Alert.alert('Eliminar jugador', `¿Eliminar a ${player.name}?`, [
+    showAlert('Eliminar jugador', `¿Eliminar a ${player.name}?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, createElement } from 'react'
 import {
   View,
   Text,
@@ -6,11 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   Platform,
   Modal,
-  Share,
-  Linking,
   ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
@@ -22,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQueryClient } from '@tanstack/react-query'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { supabase } from '@/lib/supabase'
+import { showAlert, shareText, shareWhatsApp } from '@/lib/webCompat'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlayers } from '@/hooks/usePlayers'
 import type { Player, MatchType, Position } from '@/types'
@@ -70,7 +68,7 @@ export default function CreateMatchScreen() {
       setSelectedPlayers((prev) => prev.filter((p) => p.id !== player.id))
     } else {
       if (selectedPlayers.length >= limit * 2) {
-        Alert.alert('Límite alcanzado', `Para un ${matchType} necesitas exactamente ${limit * 2} jugadores.`)
+        showAlert('Límite alcanzado', `Para un ${matchType} necesitas exactamente ${limit * 2} jugadores.`)
         return
       }
       setSelectedPlayers((prev) => [...prev, player])
@@ -79,7 +77,7 @@ export default function CreateMatchScreen() {
 
   const handleMakeTeams = () => {
     if (selectedPlayers.length !== limit * 2) {
-      Alert.alert('Jugadores insuficientes', `Necesitas ${limit * 2} jugadores para un ${matchType}.\nActualmente tienes ${selectedPlayers.length}.`)
+      showAlert('Jugadores insuficientes', `Necesitas ${limit * 2} jugadores para un ${matchType}.\nActualmente tienes ${selectedPlayers.length}.`)
       return
     }
     const result = balanceTeams(selectedPlayers)
@@ -99,7 +97,7 @@ export default function CreateMatchScreen() {
         .eq('date', date)
         .limit(1)
       if (existing && existing.length > 0) {
-        Alert.alert('Fecha duplicada', `Ya tienes un partido el ${date}. Solo se permite un partido por día.`)
+        showAlert('Fecha duplicada', `Ya tienes un partido el ${date}. Solo se permite un partido por día.`)
         setSaving(false)
         return
       }
@@ -138,13 +136,13 @@ export default function CreateMatchScreen() {
 
       queryClient.invalidateQueries({ queryKey: ['matches'] })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      Alert.alert('¡Partido creado!', '¡El partido ha sido guardado!', [
+      showAlert('¡Partido creado!', '¡El partido ha sido guardado!', [
         { text: 'Ver partidos', onPress: () => router.replace('/matches-list') },
         { text: 'Nuevo partido', onPress: () => router.replace('/create-match') },
       ])
     } catch (err: any) {
       console.error('[create-match] Error guardando partido:', JSON.stringify(err, null, 2))
-      Alert.alert('Error al guardar', err?.message || 'No se pudo guardar el partido.')
+      showAlert('Error al guardar', err?.message || 'No se pudo guardar el partido.')
     } finally {
       setSaving(false)
     }
@@ -167,19 +165,11 @@ export default function CreateMatchScreen() {
   }
 
   const handleShareLineup = async () => {
-    try {
-      await Share.share({ message: formatLineup() })
-    } catch {}
+    await shareText(formatLineup())
   }
 
   const handleShareWhatsApp = async () => {
-    const text = formatLineup()
-    const url = `whatsapp://send?text=${encodeURIComponent(text)}`
-    if (await Linking.canOpenURL(url)) {
-      await Linking.openURL(url)
-    } else {
-      await Share.share({ message: text })
-    }
+    await shareWhatsApp(formatLineup())
   }
 
   // STEP: SETUP
@@ -208,13 +198,30 @@ export default function CreateMatchScreen() {
               <Ionicons name="calendar-outline" size={14} color="rgba(255,255,255,0.85)" />
               <Text style={styles.sectionLabel}>Fecha del partido</Text>
             </View>
-            <TouchableOpacity style={styles.dateCard} onPress={() => setShowDatePicker(true)} activeOpacity={0.8}>
-              <Ionicons name="calendar-outline" size={20} color="#4ADE80" />
-              <Text style={styles.dateText}>{date}</Text>
-              <View style={styles.calendarBtn}>
-                <Ionicons name="pencil-outline" size={16} color="#4ADE80" />
+            {Platform.OS === 'web' ? (
+              // @react-native-community/datetimepicker no soporta web → input nativo del navegador
+              <View style={styles.dateCard}>
+                <Ionicons name="calendar-outline" size={20} color="#4ADE80" />
+                {createElement('input', {
+                  type: 'date',
+                  value: date,
+                  onChange: (e: any) => { if (e.target.value) setDate(e.target.value) },
+                  style: {
+                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                    color: '#FFFFFF', fontSize: 16, fontWeight: 600, colorScheme: 'dark',
+                    fontFamily: 'inherit', marginLeft: 8,
+                  },
+                })}
               </View>
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.dateCard} onPress={() => setShowDatePicker(true)} activeOpacity={0.8}>
+                <Ionicons name="calendar-outline" size={20} color="#4ADE80" />
+                <Text style={styles.dateText}>{date}</Text>
+                <View style={styles.calendarBtn}>
+                  <Ionicons name="pencil-outline" size={16} color="#4ADE80" />
+                </View>
+              </TouchableOpacity>
+            )}
 
             {/* DatePicker (Android: modal nativo automático) */}
             {showDatePicker && Platform.OS === 'android' && (
@@ -289,7 +296,7 @@ export default function CreateMatchScreen() {
               style={styles.nextBtn}
               onPress={() => {
                 if (players.length === 0) {
-                  Alert.alert(
+                  showAlert(
                     'Sin jugadores',
                     'Debes crear jugadores antes de organizar un partido.',
                     [

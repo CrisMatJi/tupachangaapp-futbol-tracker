@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ImageBackground,
 } from 'react-native'
 import { router } from 'expo-router'
@@ -15,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '@/lib/supabase'
+import { showAlert } from '@/lib/webCompat'
 import { useAuth } from '@/hooks/useAuth'
 import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
 
@@ -59,7 +59,7 @@ export default function HomeScreen() {
   }, [user, loading])
 
   const handleLogout = () => {
-    Alert.alert('Cerrar sesión', '¿Estás seguro?', [
+    showAlert('Cerrar sesión', '¿Estás seguro?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Salir',

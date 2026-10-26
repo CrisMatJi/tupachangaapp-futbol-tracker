@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ImageBackground,
@@ -18,6 +17,7 @@ import * as WebBrowser from 'expo-web-browser'
 import { makeRedirectUri } from 'expo-auth-session'
 import Constants from 'expo-constants'
 import { supabase } from '@/lib/supabase'
+import { showAlert, getAppUrl } from '@/lib/webCompat'
 import { useAuth } from '@/hooks/useAuth'
 import { FieldLines } from '@/components/FootballBackground'
 import { colors, spacing, radius, fontSize, layout } from '@/constants/theme'
@@ -47,7 +47,9 @@ export default function AuthScreen() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+            // Incluye el baseUrl de GitHub Pages (/tupachangaapp-futbol-tracker); con solo
+            // window.location.origin Supabase devolvía al usuario a la raíz del dominio (404).
+            redirectTo: `${getAppUrl()}/`,
           },
         })
         if (error) throw error
@@ -104,7 +106,7 @@ export default function AuthScreen() {
         if (session) router.replace('/home')
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Error al iniciar sesión con Google')
+      showAlert('Error', err?.message || 'Error al iniciar sesión con Google')
     } finally {
       setGoogleLoading(false)
     }
@@ -112,15 +114,15 @@ export default function AuthScreen() {
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos.')
+      showAlert('Error', 'Por favor completa todos los campos.')
       return
     }
     if (mode === 'register' && password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.')
+      showAlert('Error', 'Las contraseñas no coinciden.')
       return
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.')
+      showAlert('Error', 'La contraseña debe tener al menos 6 caracteres.')
       return
     }
 
@@ -131,14 +133,18 @@ export default function AuthScreen() {
         if (error) throw error
         router.replace('/home')
       } else {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: Platform.OS === 'web' ? { emailRedirectTo: `${getAppUrl()}/` } : undefined,
+        })
         if (error) throw error
         if (data.session) {
           // Confirmación de email desactivada → sesión inmediata
           router.replace('/home')
         } else {
           // Confirmación de email activada → avisar al usuario
-          Alert.alert(
+          showAlert(
             '¡Registro exitoso!',
             'Te hemos enviado un email de confirmación. Confírmalo y luego inicia sesión.',
             [{ text: 'OK', onPress: () => setMode('login') }]
@@ -147,7 +153,7 @@ export default function AuthScreen() {
       }
     } catch (err: any) {
       const msg = err?.message || 'Ocurrió un error. Inténtalo de nuevo.'
-      Alert.alert('Error', msg)
+      showAlert('Error', msg)
     } finally {
       setLoading(false)
     }
